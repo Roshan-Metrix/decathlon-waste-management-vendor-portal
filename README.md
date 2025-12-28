@@ -67,6 +67,6 @@ This project is licensed under the [MIT License](license.txt).
 >
 > For any inquiries or support, please reach out to:
 >
-> - **Email:** roshanpatel12309@metrix.com
+> - **Email:** roshanpatel12309@gmail.com
 > - **GitHub:** [Roshan-Metrix](https://github.com/Roshan-Metrix)
 > - **LinkedIn:** [Roshan Patel](https://www.linkedin.com/in/roshannnn/)
