@@ -21,7 +21,7 @@ A professional, secure, and modern authentication system to handle store operati
 
 ```bash
 git clone https://github.com/Roshan-Metrix/decathlon-waste-management-vendor-portal.git
-cd Decathlon_WEB
+cd frontend
 ```
 
 #### Create a `.env` file in the `backend` directory:
