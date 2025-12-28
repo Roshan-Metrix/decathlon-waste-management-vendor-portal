@@ -76,7 +76,7 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 px-6 sm:px-0">
+    <div className="flex items-center justify-center min-h-screen bg-gray-200 px-6 sm:px-0">
       {/* Logo */}
       <div
         onClick={() => navigate("/")}

@@ -11,7 +11,7 @@ const Header = () => {
       <div className="w-70 h-66 rounded-full flex justify-center items-center overflow-hidden">
         <img src={assets.header_img} alt="" className='w-50 h-40' />
         </div>
-        <h1 className='flex items-center gap-2 text-xl sm:text-3xl font-medium mb-2'>Hey {userData ? userData.name : 'Vendor'}!
+        <h1 className='flex items-center gap-2 text-xl sm:text-3xl font-medium mb-2'>Hey {userData ? userData.user.name : 'Vendor'}!
           {/* <img className='w-8 aspect-square' src={assets.hand_wave} alt='' /> */}
         </h1>
 
