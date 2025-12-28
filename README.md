@@ -1,4 +1,4 @@
-# Decathlon Web Portal
+# ![Decathlon Logo](frontend/assets/splash-icon.png) Decathlon Web Portal
 
 A professional, secure, and modern authentication system to handle store operations of related vendor of Decathlon Waste Management App. Features include OTP verification via Gmail, JWT-based authentication, bcrypt password hashing, and robust security best practices. The frontend is crafted with React.js and Tailwind CSS for a seamless user experience.
 
