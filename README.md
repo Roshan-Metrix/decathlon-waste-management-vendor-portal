@@ -63,5 +63,10 @@ This project is licensed under the [MIT License](license.txt).
 
 ---
 
-> **Ready to use, secure, and scalable authentication for your next MERN project,enjoy it!**
-
+> **Contact Information**
+>
+> For any inquiries or support, please reach out to:
+>
+> - **Email:** roshanpatel12309@metrix.com
+> - **GitHub:** [Roshan-Metrix](https://github.com/Roshan-Metrix)
+> - **LinkedIn:** [Roshan Metrix](https://www.linkedin.com/in/roshannnn/)
