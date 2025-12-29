@@ -32,11 +32,11 @@ const NavBar = () => {
       {userData ? (
         <div className="w-11 h-11 flex justify-center items-center rounded-full bg-blue-900 text-white relative group">
           {userData.name[0].toUpperCase()}
-          <div className="absolute hidden group-hover:block top-0 right-0 z-19 text-black rounded pt-10">
-            <ul className="list-none m-1 py-2 px-3 bg-red-400 text-sm rounded">
+          <div className="absolute hidden group-hover:block top-0 right-0 z-19 text-white rounded pt-10">
+            <ul className="list-none m-1 py-2 px-3 bg-[#1e40af] text-sm rounded">
               <li
                 onClick={logout}
-                className="py-1 px-2 hover:bg-gray-200 cursor-pointer pr-10 font-semibold"
+                className="py-1 px-2 hover:bg-gray-200 hover:text-black cursor-pointer pr-10 font-semibold"
               >
                 Logout
               </li>
