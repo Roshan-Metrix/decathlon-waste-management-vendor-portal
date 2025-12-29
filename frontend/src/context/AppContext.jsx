@@ -9,9 +9,13 @@ export const AppContentProvider = ({ children }) => {
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
+  // For Vendor Authentication
   const [isLoggedin, setIsLoggedin] = useState(false);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Fetch Data (Store, Transaction , Waste etc.)
+  const [transactionData, setTransactionData] = useState([]);
 
   const getUserData = async () => {
     try {
@@ -20,7 +24,7 @@ export const AppContentProvider = ({ children }) => {
       );
 
       if (data.success) {
-        setUserData(data.user);
+        setUserData(data.vendor);
         setIsLoggedin(true);
       } else {
         setUserData(null);
@@ -33,7 +37,7 @@ export const AppContentProvider = ({ children }) => {
 
       if (error.response?.status !== 401) {
         toast.error(
-          error.response?.data?.message || "Failed to fetch user data"
+          error.response?.data?.message
         );
       }
     } finally {
@@ -41,8 +45,25 @@ export const AppContentProvider = ({ children }) => {
     }
   };
 
-  useEffect(() => {
+  const getTransactionData = async () => {
+    try {
+      const { data } = await axios.get(
+        `${backendUrl}/auth/vendor/get-all-related-transactions`
+      );
+
+      if (data.success) {
+        setTransactionData(data);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message);
+    }
+  };
+
+ useEffect(() => {
     getUserData();
+    getTransactionData();
   }, []);
 
   const value = {
@@ -52,6 +73,8 @@ export const AppContentProvider = ({ children }) => {
     userData,
     setUserData,
     getUserData,
+    transactionData,
+    setTransactionData,
     loading,
   };
 
