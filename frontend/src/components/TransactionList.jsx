@@ -205,7 +205,7 @@ const TransactionList = () => {
                       className="cursor-pointer text-primaryColor"
                       size={22}
                       onClick={() =>
-                        navigate(`/transactions/${txn.transactionId}`, {
+                        navigate(`/dashboard/transactions/${txn.transactionId}`, {
                           state: txn,
                         })
                       }
@@ -215,7 +215,7 @@ const TransactionList = () => {
 
                 <div className="space-y-2 text-sm">
                   <p><b>Manager:</b> {txn.managerName}</p>
-                  <p><b>Total Waste:</b> {txn.items.length}</p>
+                  <p><b>Total Wastes:</b> {txn.items.length}</p>
                   <p><b>Date:</b> {formatDate(txn.createdAt)}</p>
                 </div>
               </div>
