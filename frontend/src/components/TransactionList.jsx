@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { FiChevronRight, FiDownload } from "react-icons/fi";
 import { saveAs } from "file-saver";
 
-
 const PAGE_SIZES = [6, 10, 20];
 
 const TransactionList = () => {
@@ -17,7 +16,8 @@ const TransactionList = () => {
   const [sortOption, setSortOption] = useState("latest");
   const [filterDate, setFilterDate] = useState("");
 
-  /* -------------------- PAGINATION -------------------- */
+  const [showStoreDropdown, setShowStoreDropdown] = useState(false);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
 
@@ -32,6 +32,19 @@ const TransactionList = () => {
       minute: "2-digit",
     });
   };
+
+  /* -------------------- STORE OPTIONS -------------------- */
+  const storeOptions = useMemo(() => {
+    if (!transactionData?.transactions) return [];
+    const names = transactionData.transactions
+      .map((t) => t.store?.storeName)
+      .filter(Boolean);
+    return [...new Set(names)];
+  }, [transactionData]);
+
+  const filteredStoreOptions = storeOptions.filter((name) =>
+    name.toLowerCase().includes(searchStore.toLowerCase())
+  );
 
   /* -------------------- FILTER + SORT -------------------- */
   const filteredTransactions = useMemo(() => {
@@ -53,8 +66,7 @@ const TransactionList = () => {
 
     if (filterDate) {
       data = data.filter(
-        (t) =>
-          new Date(t.createdAt).toISOString().split("T")[0] === filterDate
+        (t) => new Date(t.createdAt).toISOString().split("T")[0] === filterDate
       );
     }
 
@@ -76,7 +88,7 @@ const TransactionList = () => {
     return data;
   }, [transactionData, searchStore, searchManager, sortOption, filterDate]);
 
-  /* -------------------- PAGINATION LOGIC -------------------- */
+  /* -------------------- PAGINATION -------------------- */
   const totalPages = Math.ceil(filteredTransactions.length / pageSize);
   const paginatedData = filteredTransactions.slice(
     (currentPage - 1) * pageSize,
@@ -101,9 +113,7 @@ const TransactionList = () => {
       formatDate(t.createdAt),
     ]);
 
-    const csv = [header, ...rows]
-      .map((row) => row.join(","))
-      .join("\n");
+    const csv = [header, ...rows].map((row) => row.join(",")).join("\n");
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     saveAs(blob, filename);
@@ -112,7 +122,6 @@ const TransactionList = () => {
   return (
     <div className="w-full bg-gray-100 mt-5 rounded-lg shadow-md p-6">
       <div className="max-w-6xl mx-auto px-4 py-2">
-
         {/* HEADER */}
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold text-primaryColor">
@@ -123,7 +132,7 @@ const TransactionList = () => {
             onClick={() =>
               exportCSV(filteredTransactions, "transactions_export.csv")
             }
-            className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-orange-600"
+            className="flex items-center gap-2 bg-primaryColor text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-600"
           >
             <FiDownload /> Export All
           </button>
@@ -131,24 +140,52 @@ const TransactionList = () => {
 
         {/* FILTER BAR */}
         <div className="bg-white rounded-xl p-4 mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <input
-            placeholder="Store Name"
-            value={searchStore}
-            onChange={(e) => setSearchStore(e.target.value)}
-            className="border rounded-lg px-3 py-2 text-sm"
-          />
+          {/* STORE SEARCH WITH DROPDOWN */}
+          <div className="relative">
+            <input
+              placeholder="Store Name"
+              value={searchStore}
+              onChange={(e) => {
+                setSearchStore(e.target.value);
+                setShowStoreDropdown(true);
+              }}
+              onFocus={() => setShowStoreDropdown(true)}
+              onBlur={() => setTimeout(() => setShowStoreDropdown(false), 150)}
+              className="border rounded-lg px-3 py-2 text-sm w-full"
+            />
+
+            {showStoreDropdown && filteredStoreOptions.length > 0 && (
+              <div className="absolute z-20 bg-white border rounded-lg mt-1 max-h-40 overflow-y-auto w-full shadow-md">
+                {filteredStoreOptions.map((name) => (
+                  <div
+                    key={name}
+                    onMouseDown={() => {
+                      setSearchStore(name); 
+                      setShowStoreDropdown(false); 
+                    }}
+                    className="px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer"
+                  >
+                    {name}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <input
             placeholder="Manager Name"
             value={searchManager}
             onChange={(e) => setSearchManager(e.target.value)}
             className="border rounded-lg px-3 py-2 text-sm"
           />
+
           <input
             type="date"
             value={filterDate}
             onChange={(e) => setFilterDate(e.target.value)}
             className="border rounded-lg px-3 py-2 text-sm"
           />
+
           <select
             value={sortOption}
             onChange={(e) => setSortOption(e.target.value)}
@@ -159,6 +196,7 @@ const TransactionList = () => {
             <option value="itemsLow">Items Low → High</option>
             <option value="itemsHigh">Items High → Low</option>
           </select>
+
           <select
             value={pageSize}
             onChange={(e) => setPageSize(Number(e.target.value))}
@@ -202,21 +240,28 @@ const TransactionList = () => {
                       }
                     />
                     <FiChevronRight
-                      className="cursor-pointer text-primaryColor"
+                      className="cursor-pointer text-orange-500"
                       size={22}
                       onClick={() =>
-                        navigate(`/dashboard/transactions/${txn.transactionId}`, {
-                          state: txn,
-                        })
+                        navigate(
+                          `/dashboard/transactions/${txn.transactionId}`,
+                          { state: txn }
+                        )
                       }
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2 text-sm">
-                  <p><b>Manager:</b> {txn.managerName}</p>
-                  <p><b>Total Wastes:</b> {txn.items.length}</p>
-                  <p><b>Date:</b> {formatDate(txn.createdAt)}</p>
+                  <p>
+                    <b>Manager:</b> {txn.managerName}
+                  </p>
+                  <p>
+                    <b>Total Wastes:</b> {txn.items.length}
+                  </p>
+                  <p>
+                    <b>Date:</b> {formatDate(txn.createdAt)}
+                  </p>
                 </div>
               </div>
             ))}
