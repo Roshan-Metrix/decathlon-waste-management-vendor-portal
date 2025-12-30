@@ -111,7 +111,7 @@ const TransactionList = () => {
 
   return (
     <div className="w-full bg-gray-100 mt-5 rounded-lg shadow-md p-6">
-      <div className="max-w-6xl mx-auto px-4 py-6">
+      <div className="max-w-6xl mx-auto px-4 py-2">
 
         {/* HEADER */}
         <div className="flex justify-between items-center mb-4">
