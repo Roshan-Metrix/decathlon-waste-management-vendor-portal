@@ -18,7 +18,7 @@ const Dashboard = () => {
   return (
     <div className="flex flex-col items-center m-20 px-4 text-gray-800">
         <NavBar />
-        <div className="w-full">
+        <div className="w-full mt-3">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
                 <TotalBox name="Total Stores" value={transactionData.totalStores} />
                 <TotalBox name="Total Transactions" value={transactionData.totalTransactions} />
