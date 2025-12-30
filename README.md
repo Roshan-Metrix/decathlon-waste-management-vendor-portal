@@ -53,7 +53,7 @@ npm run dev
 
 <div align="center" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; max-width: 800px; margin: auto;">
 
-<!-- <img src="./screenshots/screenshot1.png" alt="HomePage Screenshot" width="350"/> -->
+<img src="./screenshots/decathlon_vendor.gif" alt="HomePage Screenshot" width="350"/>
 
 </div>
 
