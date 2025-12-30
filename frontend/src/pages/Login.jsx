@@ -105,7 +105,7 @@ const Login = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className={`w-full py-2.5 rounded-full font-medium flex justify-center items-center gap-2 transition
+            className={`w-full py-2.5 rounded-full font-medium flex justify-center items-center gap-2 transition cursor-pointer
               ${
                 isLoading
                   ? "bg-gray-400 cursor-not-allowed"
