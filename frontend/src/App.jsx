@@ -7,6 +7,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Dashboard from './pages/Dashboard'
 import Transactions from './pages/Transactions'
+import Profile from './pages/Profile'
 
 const App = () => {
   return (
@@ -18,6 +19,7 @@ const App = () => {
         <Route path='/reset-password' element={<ResetPassword/>}/>
         <Route path='/dashboard' element={<Dashboard/>}/>
         <Route path='/dashboard/transactions/:id' element={<Transactions/>}/>
+        <Route path='/vendor/profile' element={<Profile/>}/>
       </Routes>
     </div>
   )
