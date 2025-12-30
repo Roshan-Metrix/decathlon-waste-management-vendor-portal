@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { AppContent } from "../context/AppContext";
 import axios from "axios";
 import { toast } from "react-toastify";
+import NavBar from "../components/NavBar";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -43,13 +44,7 @@ const Login = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-200 px-6 sm:px-0">
-      {/* Logo */}
-      <div
-        onClick={() => navigate("/")}
-        className="cursor-pointer flex absolute top-3 left-3 sm:left-5"
-      >
-        <img src={assets.logo} alt="Logo" className="w-30 sm:w-65" />
-      </div>
+      <NavBar />
 
       {/* Card */}
       <div className="bg-white p-10 rounded-lg shadow-lg w-full sm:w-96 text-gray-700 text-sm">

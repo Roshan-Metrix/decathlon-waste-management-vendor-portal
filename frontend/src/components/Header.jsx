@@ -18,7 +18,7 @@ const Header = () => {
       </h1>
 
       <h2 className="text-3xl sm:text-5xl  font-semibold mb-4">
-        Welcome Back To Decathlon
+        Welcome {userData ? "Back To" : "To"} Decathlon
       </h2>
 
       <p className="mb-8 max-w-md">SPORT FOR ALL - ALL FOR SPORTS</p>
@@ -28,7 +28,7 @@ const Header = () => {
           onClick={() => navigate("/dashboard")}
           className="border border-grey-500 rounded-full px-8 py-2.5 hover:bg-gray-100 transition-all cursor-pointer"
         >
-          Get Started
+          Continue to Dashboard
         </button>
       )}
     </div>
