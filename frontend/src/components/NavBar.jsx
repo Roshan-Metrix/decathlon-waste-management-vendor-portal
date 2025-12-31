@@ -69,7 +69,7 @@ const NavBar = () => {
 
             <ul className="py-2 text-sm">
               <li
-                onClick={() => navigate("/vendor/profile")}
+                onClick={() => navigate("/profile")}
                 className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 cursor-pointer"
               >
                 <User size={16} className="text-blue-700" />

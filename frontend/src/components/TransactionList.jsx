@@ -6,22 +6,45 @@ import { saveAs } from "file-saver";
 
 const PAGE_SIZES = [6, 10, 20];
 
+/*  SKELETON CARD  */
+const TransactionSkeleton = () => (
+  <div className="bg-white rounded-xl p-5 shadow-md border animate-pulse">
+    <div className="flex justify-between items-center border-b pb-3 mb-3">
+      <div className="space-y-2">
+        <div className="h-4 w-32 bg-gray-200 rounded" />
+        <div className="h-3 w-24 bg-gray-200 rounded" />
+      </div>
+      <div className="flex gap-3">
+        <div className="h-5 w-5 bg-gray-200 rounded-full" />
+        <div className="h-5 w-5 bg-gray-200 rounded-full" />
+      </div>
+    </div>
+
+    <div className="space-y-3">
+      <div className="h-3 w-40 bg-gray-200 rounded" />
+      <div className="h-3 w-32 bg-gray-200 rounded" />
+      <div className="h-3 w-48 bg-gray-200 rounded" />
+    </div>
+  </div>
+);
+
 const TransactionList = () => {
   const { transactionData } = useContext(AppContent);
   const navigate = useNavigate();
 
-  /* -------------------- FILTER STATES -------------------- */
+  /*  FILTER STATES  */
   const [searchStore, setSearchStore] = useState("");
   const [searchManager, setSearchManager] = useState("");
   const [sortOption, setSortOption] = useState("latest");
   const [filterDate, setFilterDate] = useState("");
-
   const [showStoreDropdown, setShowStoreDropdown] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
 
-  /* -------------------- DATE FORMAT -------------------- */
+  const isLoading = !transactionData || !transactionData.transactions;
+
+  /*  DATE FORMAT  */
   const formatDate = (date) => {
     if (!date) return "N/A";
     return new Date(date).toLocaleString("en-US", {
@@ -33,7 +56,7 @@ const TransactionList = () => {
     });
   };
 
-  /* -------------------- STORE OPTIONS -------------------- */
+  /*  STORE OPTIONS  */
   const storeOptions = useMemo(() => {
     if (!transactionData?.transactions) return [];
     const names = transactionData.transactions
@@ -46,7 +69,7 @@ const TransactionList = () => {
     name.toLowerCase().includes(searchStore.toLowerCase())
   );
 
-  /* -------------------- FILTER + SORT -------------------- */
+  /*  FILTER + SORT  */
   const filteredTransactions = useMemo(() => {
     if (!transactionData?.transactions) return [];
 
@@ -66,7 +89,8 @@ const TransactionList = () => {
 
     if (filterDate) {
       data = data.filter(
-        (t) => new Date(t.createdAt).toISOString().split("T")[0] === filterDate
+        (t) =>
+          new Date(t.createdAt).toISOString().split("T")[0] === filterDate
       );
     }
 
@@ -88,14 +112,14 @@ const TransactionList = () => {
     return data;
   }, [transactionData, searchStore, searchManager, sortOption, filterDate]);
 
-  /* -------------------- PAGINATION -------------------- */
+  /*  PAGINATION  */
   const totalPages = Math.ceil(filteredTransactions.length / pageSize);
   const paginatedData = filteredTransactions.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
 
-  /* -------------------- EXPORT CSV -------------------- */
+  /*  EXPORT CSV  */
   const exportCSV = (data, filename) => {
     const header = [
       "Transaction ID",
@@ -114,33 +138,40 @@ const TransactionList = () => {
     ]);
 
     const csv = [header, ...rows].map((row) => row.join(",")).join("\n");
-
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     saveAs(blob, filename);
   };
 
   return (
     <div className="w-full bg-gray-100 mt-5 rounded-lg shadow-md p-6">
-      <div className="max-w-6xl mx-auto px-4 py-2">
+      <div className="max-w-6xl mx-auto px-4">
         {/* HEADER */}
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-3">
           <h1 className="text-2xl font-bold text-primaryColor">
             Store Transactions
           </h1>
 
-          <button
-            onClick={() =>
-              exportCSV(filteredTransactions, "transactions_export.csv")
-            }
-            className="flex items-center gap-2 bg-primaryColor text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-600"
-          >
-            <FiDownload /> Export All
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => navigate("/dashboard/stores")}
+              className="bg-primaryColor text-white px-6 py-2 rounded-lg text-sm hover:bg-blue-600 cursor-pointer"
+            >
+              Stores
+            </button>
+
+            <button
+              onClick={() =>
+                exportCSV(filteredTransactions, "transactions_export.csv")
+              }
+              className="flex items-center gap-2 bg-primaryColor text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-600 cursor-pointer"
+            >
+              <FiDownload /> Export All
+            </button>
+          </div>
         </div>
 
         {/* FILTER BAR */}
         <div className="bg-white rounded-xl p-4 mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          {/* STORE SEARCH WITH DROPDOWN */}
           <div className="relative">
             <input
               placeholder="Store Name"
@@ -160,8 +191,8 @@ const TransactionList = () => {
                   <div
                     key={name}
                     onMouseDown={() => {
-                      setSearchStore(name); 
-                      setShowStoreDropdown(false); 
+                      setSearchStore(name);
+                      setShowStoreDropdown(false);
                     }}
                     className="px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer"
                   >
@@ -210,8 +241,14 @@ const TransactionList = () => {
           </select>
         </div>
 
-        {/* CARDS */}
-        {!paginatedData.length ? (
+        {/* CONTENT */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {Array.from({ length: pageSize }).map((_, i) => (
+              <TransactionSkeleton key={i} />
+            ))}
+          </div>
+        ) : !paginatedData.length ? (
           <p className="text-center text-gray-500 mt-20">
             No transactions found.
           </p>
@@ -236,7 +273,10 @@ const TransactionList = () => {
                     <FiDownload
                       className="cursor-pointer text-green-600"
                       onClick={() =>
-                        exportCSV([txn], `transaction_${txn.transactionId}.csv`)
+                        exportCSV(
+                          [txn],
+                          `transaction_${txn.transactionId}.csv`
+                        )
                       }
                     />
                     <FiChevronRight
@@ -269,7 +309,7 @@ const TransactionList = () => {
         )}
 
         {/* PAGINATION */}
-        {totalPages > 1 && (
+        {totalPages > 1 && !isLoading && (
           <div className="flex justify-center items-center gap-4 mt-8">
             <button
               disabled={currentPage === 1}

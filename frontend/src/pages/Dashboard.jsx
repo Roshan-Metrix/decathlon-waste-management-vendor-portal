@@ -1,17 +1,10 @@
 import React, { useContext } from "react";
-import { assets } from "../assets/assets";
-import { useNavigate } from "react-router-dom";
 import { AppContent } from "../context/AppContext";
 import NavBar from "../components/NavBar.jsx";
-import { toast } from "react-toastify";
-import axios from "axios";
 import TotalBox from "../components/TotalBox.jsx";
 import TransactionList from "../components/TransactionList.jsx";
 
-const primaryColor = "#FF4500";
-
 const Dashboard = () => {
-  const navigate = useNavigate();
   const { transactionData } = useContext(AppContent);
 
 

@@ -65,7 +65,7 @@ export const AppContentProvider = ({ children }) => {
     getUserData();
     getTransactionData();
   }, []);
-
+  
   const value = {
     backendUrl,
     isLoggedin,
