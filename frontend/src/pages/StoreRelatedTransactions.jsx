@@ -38,6 +38,7 @@ const StoreRelatedTransactions = () => {
   const [searchStore, setSearchStore] = useState("");
   const [searchManager, setSearchManager] = useState("");
   const [sortOption, setSortOption] = useState("latest");
+  const [filterDate, setFilterDate] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
@@ -92,6 +93,12 @@ const StoreRelatedTransactions = () => {
       );
     }
 
+    if (filterDate) {
+      data = data.filter(
+        (t) => new Date(t.createdAt).toISOString().split("T")[0] === filterDate
+      );
+    }
+
     switch (sortOption) {
       case "oldest":
         data.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
@@ -108,7 +115,7 @@ const StoreRelatedTransactions = () => {
 
     setCurrentPage(1);
     return data;
-  }, [transactions, searchStore, searchManager, sortOption]);
+  }, [transactions, searchStore, searchManager, sortOption, filterDate]);
 
   /*  PAGINATION  */
   const totalPages = Math.ceil(filteredTransactions.length / pageSize);
@@ -118,138 +125,136 @@ const StoreRelatedTransactions = () => {
   );
 
   return (
-        <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen bg-slate-100">
       <NavBar />
-    <div className="w-full rounded-lg shadow-md p-6 mt-20">
-      <div className="max-w-6xl mx-auto px-4">
-        {/* HEADER */}
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold text-primaryColor">
-            Related Transactions
-          </h1>
-        </div>
-
-        {/* FILTER BAR */}
-        <div className="bg-white rounded-xl p-4 mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <input
-            placeholder="Store Name"
-            value={searchStore}
-            onChange={(e) => setSearchStore(e.target.value)}
-            className="border rounded-lg px-3 py-2 text-sm"
-          />
-
-          <input
-            placeholder="Manager Name"
-            value={searchManager}
-            onChange={(e) => setSearchManager(e.target.value)}
-            className="border rounded-lg px-3 py-2 text-sm"
-          />
-
-          <select
-            value={sortOption}
-            onChange={(e) => setSortOption(e.target.value)}
-            className="border rounded-lg px-3 py-2 text-sm"
-          >
-            <option value="latest">Latest → Oldest</option>
-            <option value="oldest">Oldest → Latest</option>
-            <option value="itemsLow">Items Low → High</option>
-            <option value="itemsHigh">Items High → Low</option>
-          </select>
-
-          <select
-            value={pageSize}
-            onChange={(e) => setPageSize(Number(e.target.value))}
-            className="border rounded-lg px-3 py-2 text-sm"
-          >
-            {PAGE_SIZES.map((s) => (
-              <option key={s} value={s}>
-                {s} / page
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* CONTENT */}
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {Array.from({ length: pageSize }).map((_, i) => (
-              <TransactionSkeleton key={i} />
-            ))}
+      <div className="w-full rounded-lg shadow-md p-6 mt-20">
+        <div className="max-w-6xl mx-auto px-4">
+          {/* HEADER */}
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-2xl font-bold text-primaryColor">
+              {transactions.length > 0
+                ? `${transactions[0]?.storeName}`
+                : "Transactions"}
+            </h1>
           </div>
-        ) : !paginatedData.length ? (
-          <p className="text-center text-gray-500 mt-20">
-            No transactions found.
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {paginatedData.map((txn) => (
-              <div
-                key={txn.transactionId}
-                className="bg-white rounded-xl p-5 shadow-md border hover:shadow-lg transition"
-              >
-                <div className="flex justify-between items-center border-b pb-3 mb-3">
-                  <div>
-                    <p className="font-semibold text-sm text-primaryColor">
-                      ID: {txn.transactionId}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {txn.storeName}
-                    </p>
+
+          {/* FILTER BAR */}
+          <div className="bg-white rounded-xl p-4 mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <input
+              placeholder="Manager Name"
+              value={searchManager}
+              onChange={(e) => setSearchManager(e.target.value)}
+              className="border rounded-lg px-3 py-2 text-sm"
+            />
+
+            <input
+              type="date"
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
+              className="border rounded-lg px-3 py-2 text-sm"
+            />
+
+            <select
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value)}
+              className="border rounded-lg px-3 py-2 text-sm"
+            >
+              <option value="latest">Latest → Oldest</option>
+              <option value="oldest">Oldest → Latest</option>
+              <option value="itemsLow">Items Low → High</option>
+              <option value="itemsHigh">Items High → Low</option>
+            </select>
+
+            <select
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+              className="border rounded-lg px-3 py-2 text-sm"
+            >
+              {PAGE_SIZES.map((s) => (
+                <option key={s} value={s}>
+                  {s} / page
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* CONTENT */}
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {Array.from({ length: pageSize }).map((_, i) => (
+                <TransactionSkeleton key={i} />
+              ))}
+            </div>
+          ) : !paginatedData.length ? (
+            <p className="text-center text-gray-500 mt-20">
+              No transactions found.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {paginatedData.map((txn) => (
+                <div
+                  key={txn.transactionId}
+                  className="bg-white rounded-xl p-5 shadow-md border hover:shadow-lg transition"
+                >
+                  <div className="flex justify-between items-center border-b pb-3 mb-3">
+                    <div>
+                      <p className="font-semibold text-sm text-primaryColor">
+                        ID: {txn.transactionId}
+                      </p>
+                      <p className="text-xs text-gray-500">{txn.storeName}</p>
+                    </div>
+
+                    <FiChevronRight
+                      size={22}
+                      className="cursor-pointer text-primaryColor hover:translate-x-1 transition"
+                      onClick={() =>
+                        navigate(`/dashboard/transactions/${txn.transactionId}`)
+                      }
+                    />
                   </div>
 
-                  <FiChevronRight
-                    size={22}
-                    className="cursor-pointer text-primaryColor hover:translate-x-1 transition"
-                    onClick={() =>
-                      navigate(
-                        `/dashboard/transactions/${txn.transactionId}`
-                      )
-                    }
-                  />
+                  <div className="space-y-2 text-sm">
+                    <p>
+                      <b>Manager:</b> {txn.managerName}
+                    </p>
+                    <p>
+                      <b>Total Items:</b> {txn.totalItems}
+                    </p>
+                    <p>
+                      <b>Date:</b> {formatDate(txn.createdAt)}
+                    </p>
+                  </div>
                 </div>
+              ))}
+            </div>
+          )}
 
-                <div className="space-y-2 text-sm">
-                  <p>
-                    <b>Manager:</b> {txn.managerName}
-                  </p>
-                  <p>
-                    <b>Total Items:</b> {txn.totalItems}
-                  </p>
-                  <p>
-                    <b>Date:</b> {formatDate(txn.createdAt)}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+          {/* PAGINATION */}
+          {totalPages > 1 && !loading && (
+            <div className="flex justify-center items-center gap-4 mt-8">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+                className="px-4 py-2 border rounded disabled:opacity-50"
+              >
+                Prev
+              </button>
 
-        {/* PAGINATION */}
-        {totalPages > 1 && !loading && (
-          <div className="flex justify-center items-center gap-4 mt-8">
-            <button
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => p - 1)}
-              className="px-4 py-2 border rounded disabled:opacity-50"
-            >
-              Prev
-            </button>
+              <span className="text-sm">
+                Page {currentPage} of {totalPages}
+              </span>
 
-            <span className="text-sm">
-              Page {currentPage} of {totalPages}
-            </span>
-
-            <button
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => p + 1)}
-              className="px-4 py-2 border rounded disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-        )}
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className="px-4 py-2 border rounded disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
     </div>
   );
 };
