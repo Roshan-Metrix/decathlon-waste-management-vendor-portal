@@ -53,11 +53,12 @@ export const AppContentProvider = ({ children }) => {
 
       if (data.success) {
         setTransactionData(data);
-      } else {
+      }
+      else {
         toast.error(data.message);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message);
+      console.log(error.response?.data?.message);
     }
   };
 
