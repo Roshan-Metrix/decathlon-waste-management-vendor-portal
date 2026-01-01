@@ -270,6 +270,36 @@ const Transactions = () => {
             </div>
           </div>
 
+
+          {/* ---------------- CALIBRATION ---------------- */}
+        <div className="bg-white rounded-xl p-6 mb-8 shadow-sm border">
+          <h3 className="font-bold mb-3 text-gray-700">
+            Calibration Details
+          </h3>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {getImageSrc(transaction.calibration?.image) ? (
+              <img
+                src={getImageSrc(transaction.calibration.image)}
+                alt="Calibration"
+                className="w-full h-56 object-cover rounded-lg border"
+              />
+            ) : (
+              <div className="h-56 bg-gray-100 rounded-lg flex flex-col items-center justify-center text-gray-400">
+                <ImageOff size={40} />
+                <p className="text-xs mt-2">No Calibration Image</p>
+              </div>
+            )}
+
+            <p className="text-lg font-semibold flex items-center">
+              Calibration Error:
+              <span className="ml-2 text-red-600">
+                 {transaction.calibration?.error ? `±${transaction.calibration?.error} kg` : "No Error"}
+              </span>
+            </p>
+          </div>
+        </div>
+
           {/* ITEMS */}
           <h3 className="text-lg font-bold mb-4 text-gray-700">
             Items ({transaction.items.length})
