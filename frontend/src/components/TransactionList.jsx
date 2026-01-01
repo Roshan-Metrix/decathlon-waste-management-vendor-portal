@@ -148,7 +148,7 @@ const TransactionList = () => {
         {/* HEADER */}
         <div className="flex justify-between items-center mb-3">
           <h1 className="text-2xl font-bold text-primaryColor">
-            Store Transactions
+            All Transactions
           </h1>
 
           <div className="flex gap-2">
