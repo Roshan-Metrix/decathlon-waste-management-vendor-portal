@@ -18,11 +18,12 @@ const Login = () => {
 
   const role = "vendor";
 
+  axios.defaults.withCredentials = true;
+  
   const onSubmitHandler = async (e) => {
     e.preventDefault();
     if (isLoading) return;
 
-    axios.defaults.withCredentials = true;
     setIsLoading(true);
 
     try {

@@ -15,9 +15,10 @@ const NavBar = () => {
   const { userData, backendUrl, setUserData, setIsLoggedin } =
     useContext(AppContent);
 
+    axios.defaults.withCredentials = true;
+    
   const logout = async () => {
     try {
-      axios.defaults.withCredentials = true;
       const { data } = await axios.post(
         `${backendUrl}/auth/vendor/logout`
       );

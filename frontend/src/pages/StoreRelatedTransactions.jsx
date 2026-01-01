@@ -27,6 +27,7 @@ const TransactionSkeleton = () => (
 );
 
 const StoreRelatedTransactions = () => {
+  axios.defaults.withCredentials = true;
   const { backendUrl } = useContext(AppContent);
   const navigate = useNavigate();
 

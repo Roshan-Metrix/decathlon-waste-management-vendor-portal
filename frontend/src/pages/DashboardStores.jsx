@@ -13,6 +13,8 @@ const DashboardStores = () => {
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
 
+  axios.defaults.withCredentials = true;
+  
   const fetchStores = async () => {
     setLoading(true);
     try {

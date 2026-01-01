@@ -55,6 +55,7 @@ const TransactionSkeleton = () => (
 );
 
 const Transactions = () => {
+  axios.defaults.withCredentials = true;
   const { backendUrl } = useContext(AppContent);
   const { id: transactionId } = useParams();
 

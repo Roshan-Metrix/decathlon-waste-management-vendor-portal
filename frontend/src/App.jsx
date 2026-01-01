@@ -14,8 +14,12 @@ import { AppContent } from "./context/AppContext";
 import Dashboard from "./pages/Dashboard";
 import DashboardStores from "./pages/DashboardStores";
 import StoreRelatedTransactions from "./pages/StoreRelatedTransactions";
+import axios from "axios";
 
 const App = () => {
+  
+  axios.defaults.withCredentials = true;
+
   const { isLoggedin } = useContext(AppContent);
   return (
     <div>
