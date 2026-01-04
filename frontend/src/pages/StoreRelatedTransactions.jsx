@@ -219,7 +219,7 @@ const StoreRelatedTransactions = () => {
                       <b>Manager:</b> {txn.managerName}
                     </p>
                     <p>
-                      <b>Total Items:</b> {txn.totalItems}
+                      <b>Total Wastes:</b> {txn.totalItems}
                     </p>
                     <p>
                       <b>Date:</b> {formatDate(txn.createdAt)}
