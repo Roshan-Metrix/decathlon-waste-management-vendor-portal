@@ -12,7 +12,6 @@ import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import { AppContent } from "./context/AppContext";
 import Dashboard from "./pages/Dashboard";
-import DashboardStores from "./pages/DashboardStores";
 import StoreRelatedTransactions from "./pages/StoreRelatedTransactions";
 import axios from "axios";
 
@@ -31,7 +30,6 @@ const App = () => {
         {isLoggedin && (
           <>
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/dashboard/stores" element={<DashboardStores />} />
             <Route path="/dashboard/stores/:storeId" element={<StoreRelatedTransactions />} />
             <Route
               path="/dashboard/transactions/:id"

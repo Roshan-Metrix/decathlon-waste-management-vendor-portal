@@ -324,11 +324,18 @@ const Transactions = () => {
                   </div>
                 )}
 
-                <div className="p-4 text-sm flex justify-between">
+                <div className="p-4 text-sm flex justify-between text-center">
+                  <div>
                   <p><b>Weight:</b> {item.weight} kg</p>
+                  </div>
+                  <div>
                   <p className="text-xs text-gray-400 text-right">
                     Added: {formatTimestamp(item.createdAt)}
                   </p>
+                  <p className="text-xs text-gray-400 text-right">
+                   Source: <span className="text-gray-800">{item.weightSource}</span>
+                  </p>
+                  </div>
                 </div>
               </div>
             ))}

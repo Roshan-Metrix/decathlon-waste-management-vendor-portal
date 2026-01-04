@@ -15,7 +15,8 @@ export const AppContentProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // Fetch Data (Store, Transaction , Waste etc.)
-  const [transactionData, setTransactionData] = useState([]);
+  const [storeData, setStoreData] = useState([]);
+  const [storeLoading, setStoreLoading] = useState(false);
 
   const getUserData = async () => {
     try {
@@ -45,26 +46,28 @@ export const AppContentProvider = ({ children }) => {
     }
   };
 
-  const getTransactionData = async () => {
+  const fetchStores = async () => {
+    setStoreLoading(true);
     try {
       const { data } = await axios.get(
-        `${backendUrl}/auth/vendor/get-all-related-transactions`
+        `${backendUrl}/auth/vendor/get-related-stores`
       );
 
       if (data.success) {
-        setTransactionData(data);
-      }
-      else {
+        setStoreData(data);
+      } else {
         toast.error(data.message);
       }
     } catch (error) {
-      console.log(error.response?.data?.message);
+      toast.error(error.response?.data?.message || "Something went wrong");
+    } finally {
+      setStoreLoading(false);
     }
   };
 
  useEffect(() => {
     getUserData();
-    getTransactionData();
+    fetchStores();
   }, []);
   
   const value = {
@@ -74,8 +77,10 @@ export const AppContentProvider = ({ children }) => {
     userData,
     setUserData,
     getUserData,
-    transactionData,
-    setTransactionData,
+    storeData,
+    setStoreData,
+    setStoreLoading,
+    storeLoading,
     loading,
   };
 

@@ -14,7 +14,6 @@ const Header = () => {
       </div>
       <h1 className="flex items-center gap-2 text-xl sm:text-3xl font-medium mb-2">
         Hey {userData ? userData.name : "Vendor"}!
-        {/* <img className='w-8 aspect-square' src={assets.hand_wave} alt='' /> */}
       </h1>
 
       <h2 className="text-3xl sm:text-5xl  font-semibold mb-4">

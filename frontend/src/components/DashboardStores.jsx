@@ -1,59 +1,28 @@
-import React, { useContext, useEffect, useState, useMemo } from "react";
+import React, { useContext, useState, useMemo } from "react";
 import { AppContent } from "../context/AppContext.jsx";
-import NavBar from "../components/NavBar.jsx";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { ChevronRight, Search } from "lucide-react";
-import { toast } from "react-toastify";
 
 const DashboardStores = () => {
-  const { backendUrl } = useContext(AppContent);
-  const [storeData, setStoreData] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { storeData, storeLoading } = useContext(AppContent);
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
 
-  axios.defaults.withCredentials = true;
-  
-  const fetchStores = async () => {
-    setLoading(true);
-    try {
-      const { data } = await axios.get(
-        `${backendUrl}/auth/vendor/get-related-stores`
-      );
-
-      if (data.success) {
-        setStoreData(data.stores);
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchStores();
-  }, []);
+    const stores = storeData?.stores || [];
 
   /* Search & Filter */
   const filteredStores = useMemo(() => {
-    return storeData.filter((store) =>
+    return stores.filter((store) =>
       `${store.storeName} ${store.storeLocation} ${store.storeId}`
         .toLowerCase()
         .includes(search.toLowerCase())
     );
-  }, [storeData, search]);
+  }, [stores, search]);
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <NavBar />
-
-      <div className="max-w-6xl mx-auto px-4 py-10 mt-17">
+      <div className="w-full mx-auto px-4 py-7">
         {/* Search */}
-        <div className="max-w-md mx-auto mb-10 relative">
+        <div className="max-w-md mx-auto mb-5 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input
             type="text"
@@ -65,7 +34,7 @@ const DashboardStores = () => {
         </div>
 
         {/* Content */}
-        {loading ? (
+        {storeLoading ? (
           /*  Loader Skeleton */
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
@@ -123,7 +92,6 @@ const DashboardStores = () => {
           </div>
         )}
       </div>
-    </div>
   );
 };
 
