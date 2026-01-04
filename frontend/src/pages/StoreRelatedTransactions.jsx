@@ -17,7 +17,6 @@ const TransactionSkeleton = () => (
       </div>
       <div className="h-5 w-5 bg-gray-200 rounded-full" />
     </div>
-
     <div className="space-y-3">
       <div className="h-3 w-36 bg-gray-200 rounded" />
       <div className="h-3 w-32 bg-gray-200 rounded" />
@@ -30,16 +29,16 @@ const StoreRelatedTransactions = () => {
   axios.defaults.withCredentials = true;
   const { backendUrl } = useContext(AppContent);
   const navigate = useNavigate();
-
   const { storeId } = useParams();
 
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [searchStore, setSearchStore] = useState("");
   const [searchManager, setSearchManager] = useState("");
   const [sortOption, setSortOption] = useState("latest");
-  const [filterDate, setFilterDate] = useState("");
+
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
@@ -51,12 +50,9 @@ const StoreRelatedTransactions = () => {
       const { data } = await axios.get(
         `${backendUrl}/auth/vendor/transactions-particular-store/${storeId}`
       );
-
-      if (data.success) {
-        setTransactions(data.transactions);
-      }
-    } catch (error) {
-      console.error(error);
+      if (data.success) setTransactions(data.transactions);
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -66,27 +62,58 @@ const StoreRelatedTransactions = () => {
     fetchTransactions();
   }, []);
 
+  /*  DATE PRESETS  */
+  const applyPreset = (preset) => {
+    const today = new Date();
+    const start = new Date();
+
+    switch (preset) {
+      case "today":
+        setFromDate(today.toISOString().split("T")[0]);
+        setToDate(today.toISOString().split("T")[0]);
+        break;
+
+      case "last7":
+        start.setDate(today.getDate() - 6);
+        setFromDate(start.toISOString().split("T")[0]);
+        setToDate(today.toISOString().split("T")[0]);
+        break;
+
+      case "last30":
+        start.setDate(today.getDate() - 29);
+        setFromDate(start.toISOString().split("T")[0]);
+        setToDate(today.toISOString().split("T")[0]);
+        break;
+
+      case "thisMonth":
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        setFromDate(firstDay.toISOString().split("T")[0]);
+        setToDate(today.toISOString().split("T")[0]);
+        break;
+
+      case "clear":
+        setFromDate("");
+        setToDate("");
+        break;
+
+      default:
+        break;
+    }
+  };
+
   /*  HELPERS  */
-  const formatDate = (date) => {
-    if (!date) return "N/A";
-    return new Date(date).toLocaleString("en-US", {
+  const formatDate = (date) =>
+    new Date(date).toLocaleString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
 
   /*  FILTER + SORT  */
   const filteredTransactions = useMemo(() => {
     let data = [...transactions];
-
-    if (searchStore) {
-      data = data.filter((t) =>
-        t.storeName?.toLowerCase().includes(searchStore.toLowerCase())
-      );
-    }
 
     if (searchManager) {
       data = data.filter((t) =>
@@ -94,10 +121,20 @@ const StoreRelatedTransactions = () => {
       );
     }
 
-    if (filterDate) {
-      data = data.filter(
-        (t) => new Date(t.createdAt).toISOString().split("T")[0] === filterDate
-      );
+    if (fromDate || toDate) {
+      data = data.filter((t) => {
+        const txnDate = new Date(t.createdAt);
+        const from = fromDate ? new Date(fromDate) : null;
+        const to = toDate ? new Date(toDate) : null;
+
+        if (from) from.setHours(0, 0, 0, 0);
+        if (to) to.setHours(23, 59, 59, 999);
+
+        if (from && to) return txnDate >= from && txnDate <= to;
+        if (from) return txnDate >= from;
+        if (to) return txnDate <= to;
+        return true;
+      });
     }
 
     switch (sortOption) {
@@ -116,7 +153,7 @@ const StoreRelatedTransactions = () => {
 
     setCurrentPage(1);
     return data;
-  }, [transactions, searchStore, searchManager, sortOption, filterDate]);
+  }, [transactions, searchManager, sortOption, fromDate, toDate]);
 
   /*  PAGINATION  */
   const totalPages = Math.ceil(filteredTransactions.length / pageSize);
@@ -128,58 +165,81 @@ const StoreRelatedTransactions = () => {
   return (
     <div className="min-h-screen bg-slate-100">
       <NavBar />
-      <div className="w-full rounded-lg shadow-md p-6 mt-20">
+
+      <div className="w-full rounded-lg p-6 mt-20">
         <div className="max-w-6xl mx-auto px-4">
-          {/* HEADER */}
-          <div className="flex justify-between items-center mb-4">
-            <h1 className="text-2xl font-bold text-primaryColor">
-              {transactions.length > 0
-                ? `${transactions[0]?.storeName}`
-                : "Transactions"}
-            </h1>
-          </div>
+          <h1 className="text-2xl font-bold text-primaryColor mb-4">
+            {loading ? "Store Transactions" : (transactions[0]?.storeName || "Store Transactions")}
+          </h1>
+          {/*  FILTER BAR  */}
+          <div className="bg-white rounded-xl p-4 mb-6 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <input
+                placeholder="Manager Name"
+                value={searchManager}
+                onChange={(e) => setSearchManager(e.target.value)}
+                className="border rounded-lg px-3 py-2 text-sm"
+              />
 
-          {/* FILTER BAR */}
-          <div className="bg-white rounded-xl p-4 mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <input
-              placeholder="Manager Name"
-              value={searchManager}
-              onChange={(e) => setSearchManager(e.target.value)}
-              className="border rounded-lg px-3 py-2 text-sm"
-            />
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="border rounded-lg px-3 py-2 text-sm"
+              />
 
-            <input
-              type="date"
-              value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
-              className="border rounded-lg px-3 py-2 text-sm"
-            />
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="border rounded-lg px-3 py-2 text-sm"
+              />
 
-            <select
-              value={sortOption}
-              onChange={(e) => setSortOption(e.target.value)}
-              className="border rounded-lg px-3 py-2 text-sm"
-            >
-              <option value="latest">Latest → Oldest</option>
-              <option value="oldest">Oldest → Latest</option>
-              <option value="itemsLow">Items Low → High</option>
-              <option value="itemsHigh">Items High → Low</option>
-            </select>
+              <select
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value)}
+                className="border rounded-lg px-3 py-2 text-sm"
+              >
+                <option value="latest">Latest → Oldest</option>
+                <option value="oldest">Oldest → Latest</option>
+                <option value="itemsLow">Items Low → High</option>
+                <option value="itemsHigh">Items High → Low</option>
+              </select>
 
-            <select
-              value={pageSize}
-              onChange={(e) => setPageSize(Number(e.target.value))}
-              className="border rounded-lg px-3 py-2 text-sm"
-            >
-              {PAGE_SIZES.map((s) => (
-                <option key={s} value={s}>
-                  {s} / page
-                </option>
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className="border rounded-lg px-3 py-2 text-sm"
+              >
+                {PAGE_SIZES.map((s) => (
+                  <option key={s} value={s}>
+                    {s} / page
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* PRESET BUTTONS */}
+            <div className="flex flex-wrap gap-2">
+              {[
+                ["Today", "today"],
+                ["Last 7 Days", "last7"],
+                ["Last 30 Days", "last30"],
+                ["This Month", "thisMonth"],
+                ["Clear", "clear"],
+              ].map(([label, value]) => (
+                <button
+                  key={value}
+                  onClick={() => applyPreset(value)}
+                  className="px-3 py-1 text-sm border rounded-full hover:bg-primaryColor hover:text-white transition"
+                >
+                  {label}
+                </button>
               ))}
-            </select>
+            </div>
           </div>
 
-          {/* CONTENT */}
+          {/*  CONTENT  */}
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {Array.from({ length: pageSize }).map((_, i) => (
@@ -202,7 +262,6 @@ const StoreRelatedTransactions = () => {
                       <p className="font-semibold text-sm text-primaryColor">
                         ID: {txn.transactionId}
                       </p>
-                      <p className="text-xs text-gray-500">{txn.storeName}</p>
                     </div>
 
                     <FiChevronRight
@@ -215,22 +274,16 @@ const StoreRelatedTransactions = () => {
                   </div>
 
                   <div className="space-y-2 text-sm">
-                    <p>
-                      <b>Manager:</b> {txn.managerName}
-                    </p>
-                    <p>
-                      <b>Total Wastes:</b> {txn.totalItems}
-                    </p>
-                    <p>
-                      <b>Date:</b> {formatDate(txn.createdAt)}
-                    </p>
+                    <p><b>Manager:</b> {txn.managerName}</p>
+                    <p><b>Total Wastes:</b> {txn.totalItems}</p>
+                    <p><b>Date:</b> {formatDate(txn.createdAt)}</p>
                   </div>
                 </div>
               ))}
             </div>
           )}
 
-          {/* PAGINATION */}
+          {/*  PAGINATION  */}
           {totalPages > 1 && !loading && (
             <div className="flex justify-center items-center gap-4 mt-8">
               <button
