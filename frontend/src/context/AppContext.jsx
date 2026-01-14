@@ -1,46 +1,41 @@
 import { useState, createContext, useEffect } from "react";
-import { toast } from "react-toastify";
 import axios from "axios";
 
 export const AppContent = createContext(null);
 
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+axios.defaults.withCredentials = true;
+
 export const AppContentProvider = ({ children }) => {
-  axios.defaults.withCredentials = true;
-
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
-
-  // For Vendor Authentication
+  // Auth state
   const [isLoggedin, setIsLoggedin] = useState(false);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch Data (Store, Transaction , Waste etc.)
-  const [storeData, setStoreData] = useState([]);
+  // Store data
+  const [storeData, setStoreData] = useState();
   const [storeLoading, setStoreLoading] = useState(false);
 
   const getUserData = async () => {
     try {
       const { data } = await axios.get(
-        `${backendUrl}/auth/vendor/profile`
+        `${backendUrl}/auth/vendor/profile`,
       );
 
       if (data.success) {
         setUserData(data.vendor);
         setIsLoggedin(true);
+        return true;
       } else {
         setUserData(null);
         setIsLoggedin(false);
+        return false;
       }
-    } catch (error) {
-      // If token expired / not logged in
+    } catch {
       setUserData(null);
       setIsLoggedin(false);
-
-      if (error.response?.status !== 401) {
-        toast.error(
-          error.response?.data?.message
-        );
-      }
+      return false;
     } finally {
       setLoading(false);
     }
@@ -55,21 +50,27 @@ export const AppContentProvider = ({ children }) => {
 
       if (data.success) {
         setStoreData(data);
-      } else {
-        toast.error(data.message);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Something went wrong");
+      console.error(
+        error.response?.data?.message || "Something went wrong"
+      );
     } finally {
       setStoreLoading(false);
     }
   };
 
- useEffect(() => {
-    getUserData();
-    fetchStores();
+  useEffect(() => {
+    const init = async () => {
+      const loggedIn = await getUserData();
+      if (loggedIn) {
+        fetchStores();
+      }
+    };
+
+    init();
   }, []);
-  
+
   const value = {
     backendUrl,
     isLoggedin,
@@ -79,7 +80,6 @@ export const AppContentProvider = ({ children }) => {
     getUserData,
     storeData,
     setStoreData,
-    setStoreLoading,
     storeLoading,
     loading,
   };
@@ -90,3 +90,4 @@ export const AppContentProvider = ({ children }) => {
     </AppContent.Provider>
   );
 };
+
