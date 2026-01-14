@@ -15,11 +15,12 @@ import Dashboard from "./pages/Dashboard";
 import StoreRelatedTransactions from "./pages/StoreRelatedTransactions";
 import axios from "axios";
 
+axios.defaults.withCredentials = true;
+
 const App = () => {
   
-  axios.defaults.withCredentials = true;
-
   const { isLoggedin } = useContext(AppContent);
+  
   return (
     <div>
       <ToastContainer />
