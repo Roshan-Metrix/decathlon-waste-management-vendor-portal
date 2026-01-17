@@ -7,55 +7,12 @@ import { ImageOff, FileDown } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import NavBar from "../components/NavBar";
+import { TransactionsSkeleton } from "../../utils/Skeleton";
 
 const PRIMARY_COLOR = "#1e40af";
 const ACCENT_COLOR = "#00bcd4";
 
-/* SKELETON COMPONENTS */
-const SkeletonBox = ({ className }) => (
-  <div className={`bg-gray-200 rounded animate-pulse ${className}`} />
-);
-
-const TransactionSkeleton = () => (
-  <div className="min-h-screen w-full bg-gray-100 pb-10">
-    <div className="bg-white shadow-md px-6 py-4 flex justify-between">
-      <SkeletonBox className="h-6 w-48" />
-      <SkeletonBox className="h-9 w-32" />
-    </div>
-
-    <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
-      <div className="bg-white rounded-xl p-6 shadow-sm border space-y-3">
-        <SkeletonBox className="h-5 w-56" />
-        {[...Array(4)].map((_, i) => (
-          <SkeletonBox key={i} className="h-4 w-full" />
-        ))}
-        <SkeletonBox className="h-8 w-32 ml-auto" />
-      </div>
-
-      <div className="bg-white rounded-xl p-6 shadow-sm border space-y-4">
-        <SkeletonBox className="h-5 w-40" />
-        <div className="grid md:grid-cols-2 gap-6">
-          <SkeletonBox className="h-56 w-full" />
-          <SkeletonBox className="h-6 w-48" />
-        </div>
-      </div>
-
-      {[...Array(3)].map((_, i) => (
-        <div key={i} className="bg-white rounded-xl shadow-sm border">
-          <SkeletonBox className="h-10 w-full rounded-none" />
-          <SkeletonBox className="h-56 w-full" />
-          <div className="p-4 space-y-2">
-            <SkeletonBox className="h-4 w-32" />
-            <SkeletonBox className="h-4 w-24" />
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
 const Transactions = () => {
-  axios.defaults.withCredentials = true;
   const { backendUrl } = useContext(AppContent);
   const { id: transactionId } = useParams();
 
@@ -177,7 +134,7 @@ const Transactions = () => {
         ]),
         foot: [
           [
-            { content: "Grand Total Weight", colSpan: 2, styles: { halign: "right" } },
+            { content: "Grand Total Weight :", colSpan: 2, styles: { halign: "right" } },
             totalWeight.toFixed(2),
             "",
           ],
@@ -215,7 +172,7 @@ const Transactions = () => {
     return (
       <div className="flex flex-col items-center m-20 px-4">
         <NavBar />
-        <TransactionSkeleton />
+        <TransactionsSkeleton />
       </div>
     );
   }
@@ -271,7 +228,7 @@ const Transactions = () => {
           </div>
 
 
-          {/* ---------------- CALIBRATION ---------------- */}
+          {/*  CALIBRATION  */}
         <div className="bg-white rounded-xl p-6 mb-8 shadow-sm border">
           <h3 className="font-bold mb-3 text-gray-700">
             Calibration Details
