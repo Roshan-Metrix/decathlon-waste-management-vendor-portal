@@ -13,9 +13,6 @@ import NotFound from "./pages/NotFound";
 import { AppContent } from "./context/AppContext";
 import Dashboard from "./pages/Dashboard";
 import StoreRelatedTransactions from "./pages/StoreRelatedTransactions";
-import axios from "axios";
-
-axios.defaults.withCredentials = true;
 
 const App = () => {
   
@@ -30,7 +27,7 @@ const App = () => {
         <Route path="/reset-password" element={<ResetPassword />} />
         {isLoggedin && (
           <>
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard/stores" element={<Dashboard />} />
             <Route path="/dashboard/stores/:storeId" element={<StoreRelatedTransactions />} />
             <Route
               path="/dashboard/transactions/:id"
