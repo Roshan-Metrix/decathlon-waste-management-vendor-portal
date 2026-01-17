@@ -4,29 +4,17 @@ import { AppContent } from "../context/AppContext";
 import { useNavigate, useParams } from "react-router-dom";
 import { FiChevronRight } from "react-icons/fi";
 import NavBar from "../components/NavBar";
+import { FileDown } from "lucide-react";
+import { StoreTransactionSkeleton } from "../../utils/Skeleton";
+import { formatDate } from "../../lib/Helper";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { toast } from "react-toastify";
+import { Hourglass } from "react-loader-spinner";
 
 const PAGE_SIZES = [6, 10, 20];
 
-/*  SKELETON CARD  */
-const TransactionSkeleton = () => (
-  <div className="bg-white rounded-xl p-5 shadow-md border animate-pulse">
-    <div className="flex justify-between items-center border-b pb-3 mb-3">
-      <div className="space-y-2">
-        <div className="h-4 w-40 bg-gray-200 rounded" />
-        <div className="h-3 w-28 bg-gray-200 rounded" />
-      </div>
-      <div className="h-5 w-5 bg-gray-200 rounded-full" />
-    </div>
-    <div className="space-y-3">
-      <div className="h-3 w-36 bg-gray-200 rounded" />
-      <div className="h-3 w-32 bg-gray-200 rounded" />
-      <div className="h-3 w-24 bg-gray-200 rounded" />
-    </div>
-  </div>
-);
-
 const StoreRelatedTransactions = () => {
-  axios.defaults.withCredentials = true;
   const { backendUrl } = useContext(AppContent);
   const navigate = useNavigate();
   const { storeId } = useParams();
@@ -43,12 +31,14 @@ const StoreRelatedTransactions = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
 
+  const [exportLoader, setExportLoader] = useState(false);
+
   /*  FETCH DATA  */
   const fetchTransactions = async () => {
     try {
       setLoading(true);
       const { data } = await axios.get(
-        `${backendUrl}/auth/vendor/transactions-particular-store/${storeId}`
+        `${backendUrl}/auth/vendor/transactions-particular-store/${storeId}`,
       );
       if (data.success) setTransactions(data.transactions);
     } catch (err) {
@@ -101,23 +91,13 @@ const StoreRelatedTransactions = () => {
     }
   };
 
-  /*  HELPERS  */
-  const formatDate = (date) =>
-    new Date(date).toLocaleString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
   /*  FILTER + SORT  */
   const filteredTransactions = useMemo(() => {
     let data = [...transactions];
 
     if (searchManager) {
       data = data.filter((t) =>
-        t.managerName?.toLowerCase().includes(searchManager.toLowerCase())
+        t.managerName?.toLowerCase().includes(searchManager.toLowerCase()),
       );
     }
 
@@ -159,8 +139,106 @@ const StoreRelatedTransactions = () => {
   const totalPages = Math.ceil(filteredTransactions.length / pageSize);
   const paginatedData = filteredTransactions.slice(
     (currentPage - 1) * pageSize,
-    currentPage * pageSize
+    currentPage * pageSize,
   );
+
+  const exportPDF = async () => {
+    try {
+      setExportLoader(true);
+      if (!fromDate || !toDate) {
+        toast.error("Please select From and To date");
+        setExportLoader(false);
+        return;
+      }
+
+      const { data } = await axios.get(
+        `${backendUrl}/auth/vendor/transactions-particular-store/${storeId}/${fromDate}/${toDate}`,
+      );
+
+      if (data.success) {
+        setExportLoader(false);
+      }
+
+      const doc = new jsPDF("p", "mm", "a4");
+      const pageWidth = doc.internal.pageSize.getWidth();
+      let cursorY = 15;
+
+      // ---- GRAND TOTAL ----
+      const grandTotalWeight = data.items.reduce(
+        (sum, item) => sum + item.weight,
+        0,
+      );
+
+      // ---- HEADER (VENDOR NAME) ----
+      doc.setFontSize(20);
+      doc.setTextColor(30, 64, 175); // dark blue
+      doc.setFont("helvetica", "bold");
+      doc.text(data.vendorName.toUpperCase(), pageWidth / 2, cursorY, {
+        align: "center",
+      });
+
+      cursorY += 8;
+
+      // ---- STORE DETAILS ----
+      doc.setFontSize(11);
+      doc.setTextColor(60);
+      doc.setFont("helvetica", "normal");
+      doc.text(
+        `Store: ${data.storeName}, ${data.storeLocation}`,
+        pageWidth / 2,
+        cursorY,
+        { align: "center" },
+      );
+
+      cursorY += 6;
+
+      // ---- DATE RANGE ----
+      doc.setFontSize(10);
+      doc.text(`Date: ${fromDate} to ${toDate}`, pageWidth / 2, cursorY, {
+        align: "center",
+      });
+
+      cursorY += 6;
+      doc.line(10, cursorY, pageWidth - 10, cursorY);
+      cursorY += 8;
+
+      // ---- TABLE ----
+      autoTable(doc, {
+        startY: cursorY,
+        head: [["SN", "Material", "Items", "Total Weight (kg)"]],
+        body: data.items.map((item, index) => [
+          index + 1,
+          item.materialType,
+          item.totalItems,
+          item.weight,
+        ]),
+        foot: [
+          [
+            {
+              content: "Grand Total",
+              colSpan: 3,
+              styles: { halign: "right", fontStyle: "bold" },
+            },
+            `${grandTotalWeight.toFixed(2)} kg`,
+          ],
+        ],
+        theme: "grid",
+        styles: { fontSize: 10 },
+        headStyles: {
+          fillColor: [238, 242, 255],
+          textColor: [30, 64, 175],
+          fontStyle: "bold",
+        },
+      });
+
+      doc.save(
+        `${data.storeName.replace(/\s/g, "_")}_${fromDate}_${toDate}.pdf`,
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to export PDF");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -169,7 +247,9 @@ const StoreRelatedTransactions = () => {
       <div className="w-full rounded-lg p-6 mt-20">
         <div className="max-w-6xl mx-auto px-4">
           <h1 className="text-2xl font-bold text-primaryColor mb-4">
-            {loading ? "Store Transactions" : (transactions[0]?.storeName || "Store Transactions")}
+            {loading
+              ? "Store Transactions"
+              : transactions[0]?.storeName || "Store Transactions"}
           </h1>
           {/*  FILTER BAR  */}
           <div className="bg-white rounded-xl p-4 mb-6 space-y-4">
@@ -219,23 +299,40 @@ const StoreRelatedTransactions = () => {
               </select>
             </div>
 
-            {/* PRESET BUTTONS */}
-            <div className="flex flex-wrap gap-2">
-              {[
-                ["Today", "today"],
-                ["Last 7 Days", "last7"],
-                ["Last 30 Days", "last30"],
-                ["This Month", "thisMonth"],
-                ["Clear", "clear"],
-              ].map(([label, value]) => (
-                <button
-                  key={value}
-                  onClick={() => applyPreset(value)}
-                  className="px-3 py-1 text-sm border rounded-full hover:bg-primaryColor hover:text-white transition"
-                >
-                  {label}
-                </button>
-              ))}
+            <div className="flex flex-wrap justify-between">
+              <div className="flex gap-2">
+                {[
+                  ["Today", "today"],
+                  ["Last 7 Days", "last7"],
+                  ["Last 30 Days", "last30"],
+                  ["This Month", "thisMonth"],
+                  ["Clear", "clear"],
+                ].map(([label, value]) => (
+                  <button
+                    key={value}
+                    onClick={() => applyPreset(value)}
+                    className="px-3 py-1 text-sm border rounded-full hover:bg-primaryColor hover:text-white transition cursor-pointer"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={exportPDF}
+              >
+                {exportLoader ? (
+                  <span className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 cursor-pointer">
+                  <Hourglass
+                    visible={true}
+                    height="20"
+                    width="20"
+                    ariaLabel="hourglass-loading"
+                    colors={["#fff", "#fff"]}
+                  /></span>
+                ) : (
+                   <span className="flex items-center gap-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 px-4 py-2 cursor-pointer"><FileDown size={16} /> Export PDF</span>
+                )}
+              </button>
             </div>
           </div>
 
@@ -243,7 +340,7 @@ const StoreRelatedTransactions = () => {
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {Array.from({ length: pageSize }).map((_, i) => (
-                <TransactionSkeleton key={i} />
+                <StoreTransactionSkeleton key={i} />
               ))}
             </div>
           ) : !paginatedData.length ? (
@@ -274,9 +371,15 @@ const StoreRelatedTransactions = () => {
                   </div>
 
                   <div className="space-y-2 text-sm">
-                    <p><b>Manager:</b> {txn.managerName}</p>
-                    <p><b>Total Wastes:</b> {txn.totalItems}</p>
-                    <p><b>Date:</b> {formatDate(txn.createdAt)}</p>
+                    <p>
+                      <b>Manager:</b> {txn.managerName}
+                    </p>
+                    <p>
+                      <b>Total Wastes:</b> {txn.totalItems}
+                    </p>
+                    <p>
+                      <b>Date:</b> {formatDate(txn.createdAt)}
+                    </p>
                   </div>
                 </div>
               ))}
