@@ -24,7 +24,7 @@ const Header = () => {
 
       {userData && (
         <button
-          onClick={() => navigate("/dashboard")}
+          onClick={() => navigate("/dashboard/stores")}
           className="border border-grey-500 rounded-full px-8 py-2.5 hover:bg-gray-100 transition-all cursor-pointer hover:shadow-md"
         >
           Continue to Dashboard
