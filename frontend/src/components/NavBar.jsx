@@ -20,7 +20,7 @@ const NavBar = () => {
   const logout = async () => {
     try {
       const { data } = await axios.post(
-        `${backendUrl}/auth/vendor/logout`
+        `${backendUrl}/vendor/logout`
       );
       if (data.success) {
         setIsLoggedin(false);
