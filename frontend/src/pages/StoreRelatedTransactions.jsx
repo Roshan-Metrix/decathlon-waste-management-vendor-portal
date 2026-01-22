@@ -38,7 +38,7 @@ const StoreRelatedTransactions = () => {
     try {
       setLoading(true);
       const { data } = await axios.get(
-        `${backendUrl}/auth/vendor/transactions-particular-store/${storeId}`,
+        `${backendUrl}/vendor/transactions-particular-store/${storeId}`,
       );
       if (data.success) setTransactions(data.transactions);
     } catch (err) {
@@ -152,7 +152,7 @@ const StoreRelatedTransactions = () => {
       }
 
       const { data } = await axios.get(
-        `${backendUrl}/auth/vendor/transactions-particular-store/${storeId}/${fromDate}/${toDate}`,
+        `${backendUrl}/vendor/transactions-particular-store/${storeId}/${fromDate}/${toDate}`,
       );
 
       if (data.success) {

@@ -24,7 +24,7 @@ const Transactions = () => {
     setLoading(true);
     try {
       const { data } = await axios.get(
-        `${backendUrl}/auth/vendor/particular-transactions/${transactionId}`
+        `${backendUrl}/vendor/particular-transactions/${transactionId}`
       );
 
       if (data.success && data.transactions.length > 0) {

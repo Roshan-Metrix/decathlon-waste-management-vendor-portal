@@ -28,7 +28,7 @@ const Login = () => {
 
     try {
       const { data } = await axios.post(
-        `${backendUrl}/auth/vendor/login`,
+        `${backendUrl}/vendor/login`,
         { email, password, role }
       );
 
