@@ -20,7 +20,7 @@ export const AppContentProvider = ({ children }) => {
   const getUserData = async () => {
     try {
       const { data } = await axios.get(
-        `${backendUrl}/auth/vendor/profile`,
+        `${backendUrl}/vendor/profile`,
       );
 
       if (data.success) {
@@ -45,7 +45,7 @@ export const AppContentProvider = ({ children }) => {
     setStoreLoading(true);
     try {
       const { data } = await axios.get(
-        `${backendUrl}/auth/vendor/get-related-stores`
+        `${backendUrl}/vendor/get-related-stores`
       );
 
       if (data.success) {
