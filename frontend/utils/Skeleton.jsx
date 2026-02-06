@@ -43,7 +43,7 @@ export const TransactionsSkeleton = () => (
         </div>
       </div>
 
-      {[...Array(3)].map((_, i) => (
+      {[...Array(2)].map((_, i) => (
         <div key={i} className="bg-white rounded-xl shadow-sm border">
           <SkeletonBox className="h-10 w-full rounded-none" />
           <SkeletonBox className="h-56 w-full" />
