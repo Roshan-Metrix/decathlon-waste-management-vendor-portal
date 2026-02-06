@@ -8,6 +8,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import NavBar from "../components/NavBar";
 import { TransactionsSkeleton } from "../../utils/Skeleton";
+import useImagePreview from "../../lib/previewImage";
 
 const PRIMARY_COLOR = "#1e40af";
 const ACCENT_COLOR = "#00bcd4";
@@ -15,6 +16,7 @@ const ACCENT_COLOR = "#00bcd4";
 const Transactions = () => {
   const { backendUrl } = useContext(AppContent);
   const { id: transactionId } = useParams();
+  const { openImage, ImagePreviewModal } = useImagePreview();
 
   const [transaction, setTransaction] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -239,7 +241,8 @@ const Transactions = () => {
               <img
                 src={getImageSrc(transaction.calibration.image)}
                 alt="Calibration"
-                className="w-full h-56 object-cover rounded-lg border"
+                className="w-full h-56 object-cover rounded-lg border cursor-pointer"
+                onClick={() => openImage(getImageSrc(transaction.calibration.image))}
               />
             ) : (
               <div className="h-56 bg-gray-100 rounded-lg flex flex-col items-center justify-center text-gray-400">
@@ -274,7 +277,7 @@ const Transactions = () => {
                 </div>
 
                 {getImageSrc(item.image) ? (
-                  <img src={getImageSrc(item.image)} alt="Item" className="w-full h-56 object-cover" />
+                  <img src={getImageSrc(item.image)} alt="Item"  className="w-full h-56 object-cover cursor-pointer" onClick={() => openImage(getImageSrc(item.image))} />
                 ) : (
                   <div className="h-56 bg-gray-100 flex items-center justify-center text-gray-400">
                     <ImageOff />
@@ -299,6 +302,7 @@ const Transactions = () => {
           </div>
         </div>
       </div>
+      <ImagePreviewModal />
     </div>
   );
 };
