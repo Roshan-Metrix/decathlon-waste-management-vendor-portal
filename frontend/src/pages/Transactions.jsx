@@ -82,92 +82,151 @@ const Transactions = () => {
   };
 
   /*  PDF EXPORT  */
+
   const exportPDF = () => {
-    try {
-      if (!transaction) return;
+  try {
+    if (!transaction) return;
 
-      const doc = new jsPDF("p", "mm", "a4");
-      const pageWidth = doc.internal.pageSize.getWidth();
-      let cursorY = 15;
+    const doc = new jsPDF("p", "mm", "a4");
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let cursorY = 15;
 
-      const totalWeight = transaction.items.reduce(
-        (sum, i) => sum + i.weight,
-        0
-      );
+    const totalWeight = transaction.items.reduce(
+      (sum, i) => sum + i.weight,
+      0
+    );
 
-      const materialSummary = getMaterialSummary(transaction.items);
+    const materialSummary = getMaterialSummary(transaction.items);
 
-      doc.setFontSize(18);
+    //  HEADER 
+    doc.setFontSize(18);
+    doc.setTextColor(30, 64, 175);
+    doc.text(
+      transaction.store?.storeName || "N/A",
+      pageWidth / 2,
+      cursorY,
+      { align: "center" }
+    );
+
+    cursorY += 8;
+
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    doc.text(
+      transaction.store?.storeLocation || "",
+      pageWidth / 2,
+      cursorY,
+      { align: "center" }
+    );
+
+    cursorY += 6;
+
+    doc.text(
+      `Transaction ID: ${transaction.transactionId} | Vendor: ${
+        transaction.vendorName || "N/A"
+      }`,
+      pageWidth / 2,
+      cursorY,
+      { align: "center" }
+    );
+
+    cursorY += 5;
+
+    doc.setDrawColor(200);
+    doc.line(10, cursorY, pageWidth - 10, cursorY);
+
+    //  ITEMS TITLE 
+    cursorY += 10;
+    doc.setFontSize(13);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Detailed Transaction Items", 14, cursorY);
+
+    //  ITEMS TABLE 
+    autoTable(doc, {
+      startY: cursorY + 5,
+      head: [["SN", "Material", "Weight (kg)", "Time & Source"]],
+      body: transaction.items.map((item, index) => [
+        index + 1,
+        item.materialType,
+        item.weight,
+        ` ${formatTimestamp(item.createdAt)} (${item.weightSource === "system" ? "System" : "Manually"})`,
+      ]),
+      foot: [
+        [
+          {
+            content: "Grand Total Weight :",
+            colSpan: 2,
+            styles: { halign: "right", fontStyle: "bold" },
+          },
+          totalWeight.toFixed(2),
+          "",
+        ],
+      ],
+      theme: "grid",
+      styles: {
+        fontSize: 9,
+        cellPadding: 3,
+      },
+      headStyles: {
+        fillColor: [238, 242, 255],
+        textColor: [30, 64, 175],
+        fontStyle: "bold",
+      },
+      footStyles: {
+        fillColor: [224, 242, 254],
+        textColor: [0, 0, 0],
+        fontStyle: "bold",
+      },
+    });
+
+    //  MATERIAL SUMMARY 
+    if (materialSummary.length > 0) {
+      cursorY = doc.lastAutoTable.finalY + 12;
+
+      doc.setFontSize(13);
       doc.setTextColor(30, 64, 175);
-      doc.text(transaction.vendorName || "Vendor", pageWidth / 2, cursorY, {
-        align: "center",
-      });
-
-      cursorY += 7;
-      doc.setFontSize(11);
-      doc.setTextColor(100);
-      doc.text(
-        `Store: ${transaction.store?.storeName || "N/A"} , ${
-          transaction.store?.storeLocation || ""
-        }`,
-        pageWidth / 2,
-        cursorY,
-        { align: "center" }
-      );
-
-      cursorY += 6;
-      doc.setFontSize(10);
-      doc.text(`Transaction ID: ${transaction.transactionId}`, pageWidth / 2, cursorY, {
-        align: "center",
-      });
-
-      cursorY += 6;
-      doc.line(10, cursorY, pageWidth - 10, cursorY);
-      cursorY += 8;
+      doc.text("Material Type Summary", 14, cursorY);
 
       autoTable(doc, {
-        startY: cursorY,
-        head: [["SN", "Material", "Weight (kg)", "Time & Source"]],
-        body: transaction.items.map((item, index) => [
-          index + 1,
-          item.materialType,
-          item.weight,
-          `${formatTimestamp(item.createdAt)} (${item.weightSource})`,
+        startY: cursorY + 5,
+        head: [["#", "Material", "Items", "Total Weight (kg)"]],
+        body: materialSummary.map((s) => [
+          s.sn,
+          s.materialType,
+          `${s.itemCount} item${s.itemCount !== 1 ? "s" : ""}`,
+          s.totalWeight,
         ]),
-        foot: [
-          [
-            { content: "Grand Total Weight :", colSpan: 2, styles: { halign: "right" } },
-            totalWeight.toFixed(2),
-            "",
-          ],
-        ],
         theme: "grid",
-        styles: { fontSize: 9 },
+        styles: {
+          fontSize: 9,
+          cellPadding: 3,
+        },
         headStyles: {
-          fillColor: [238, 242, 255],
+          fillColor: [249, 249, 249],
           textColor: [30, 64, 175],
+          fontStyle: "bold",
         },
       });
-
-      if (materialSummary.length > 0) {
-        cursorY = doc.lastAutoTable.finalY + 10;
-        autoTable(doc, {
-          startY: cursorY,
-          head: [["#", "Material", "Items", "Total Weight (kg)"]],
-          body: materialSummary.map((s) => [
-            s.sn,
-            s.materialType,
-            s.itemCount,
-            s.totalWeight,
-          ]),
-        });
-      }
-
-      doc.save(`${transaction.transactionId}_Bill.pdf`);
-    } catch (err) {
-      toast.error("Failed to generate PDF");
     }
-  };
+
+    //  SIGNATURE AREA 
+    // cursorY = doc.lastAutoTable
+    //   ? doc.lastAutoTable.finalY + 20
+    //   : cursorY + 20;
+
+    // doc.setFontSize(11);
+    // doc.setTextColor(0, 0, 0);
+
+    // doc.line(pageWidth - 70, cursorY, pageWidth - 20, cursorY);
+    // doc.text("Manager Signature", pageWidth - 45, cursorY + 6, {
+    //   align: "left",
+    // });
+
+    doc.save(`${transaction.transactionId}_Bill.pdf`);
+  } catch (err) {
+    toast.error("Failed to generate PDF");
+  }
+};
 
   /*  LOADING  */
   if (loading) {
