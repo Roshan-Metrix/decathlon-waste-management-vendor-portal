@@ -173,30 +173,42 @@ const StoreRelatedTransactions = () => {
       doc.setFontSize(20);
       doc.setTextColor(30, 64, 175); // dark blue
       doc.setFont("helvetica", "bold");
-      doc.text(data.vendorName.toUpperCase(), pageWidth / 2, cursorY, {
+      doc.text(data.storeName.toUpperCase(), pageWidth / 2, cursorY, {
         align: "center",
       });
 
-      cursorY += 8;
+      cursorY += 6;
 
       // ---- STORE DETAILS ----
-      doc.setFontSize(11);
+      doc.setFontSize(10);
       doc.setTextColor(60);
       doc.setFont("helvetica", "normal");
       doc.text(
-        `Store: ${data.storeName}, ${data.storeLocation}`,
+        `${data.storeLocation}`,
         pageWidth / 2,
         cursorY,
         { align: "center" },
       );
 
-      cursorY += 6;
+      cursorY += 8;
 
       // ---- DATE RANGE ----
       doc.setFontSize(10);
       doc.text(`Date: ${fromDate} to ${toDate}`, pageWidth / 2, cursorY, {
         align: "center",
       });
+
+      cursorY += 6;
+
+      doc.setFontSize(11);
+      doc.setTextColor(60);
+      doc.setFont("helvetica", "normal");
+      doc.text(
+        `Vendor: ${data.vendorName}`,
+        pageWidth / 2,
+        cursorY,
+        { align: "center" },
+      );
 
       cursorY += 6;
       doc.line(10, cursorY, pageWidth - 10, cursorY);
