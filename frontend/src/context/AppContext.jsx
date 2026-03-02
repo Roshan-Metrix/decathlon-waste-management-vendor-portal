@@ -19,9 +19,7 @@ export const AppContentProvider = ({ children }) => {
 
   const getUserData = async () => {
     try {
-      const { data } = await axios.get(
-        `${backendUrl}/vendor/profile`,
-      );
+      const { data } = await axios.get(`${backendUrl}/vendor/profile`);
 
       if (data.success) {
         setUserData(data.vendor);
@@ -45,31 +43,30 @@ export const AppContentProvider = ({ children }) => {
     setStoreLoading(true);
     try {
       const { data } = await axios.get(
-        `${backendUrl}/vendor/get-related-stores`
+        `${backendUrl}/vendor/get-related-stores`,
       );
 
       if (data.success) {
         setStoreData(data);
       }
     } catch (error) {
-      console.error(
-        error.response?.data?.message || "Something went wrong"
-      );
+      console.error(error.response?.data?.message || "Something went wrong");
     } finally {
       setStoreLoading(false);
     }
   };
 
   useEffect(() => {
-    const init = async () => {
-      const loggedIn = await getUserData();
-      if (loggedIn) {
-        fetchStores();
-      }
-    };
-
-    init();
+    getUserData();
   }, []);
+
+  useEffect(() => {
+    if (isLoggedin) {
+      fetchStores();
+    } else {
+      setStoreData(null);
+    }
+  }, [isLoggedin]);
 
   const value = {
     backendUrl,
@@ -84,10 +81,5 @@ export const AppContentProvider = ({ children }) => {
     loading,
   };
 
-  return (
-    <AppContent.Provider value={value}>
-      {children}
-    </AppContent.Provider>
-  );
+  return <AppContent.Provider value={value}>{children}</AppContent.Provider>;
 };
-
