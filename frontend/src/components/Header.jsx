@@ -17,7 +17,7 @@ const Header = () => {
       </h1>
 
       <h2 className="text-3xl sm:text-5xl  font-semibold mb-4">
-        Welcome {userData ? "Back To" : "To"} Decathlon
+        Welcome {userData ? "Back To" : "To"} DecaWaste
       </h2>
 
       <p className="mb-8 max-w-md">SPORT FOR ALL - ALL FOR SPORTS</p>
