@@ -142,115 +142,244 @@ const StoreRelatedTransactions = () => {
     currentPage * pageSize,
   );
 
+  // const exportPDF = async () => {
+  //   try {
+  //     setExportLoader(true);
+  //     if (!fromDate || !toDate) {
+  //       toast.error("Please select From and To date");
+  //       setExportLoader(false);
+  //       return;
+  //     }
+
+  //     const { data } = await axios.get(
+  //       `${backendUrl}/vendor/transactions-particular-store/${storeId}/${fromDate}/${toDate}`,
+  //     );
+
+  //     if (data.success) {
+  //       setExportLoader(false);
+  //     }
+
+  //     const doc = new jsPDF("p", "mm", "a4");
+  //     const pageWidth = doc.internal.pageSize.getWidth();
+  //     let cursorY = 15;
+
+  //     // ---- GRAND TOTAL ----
+  //     const grandTotalWeight = data.items.reduce(
+  //       (sum, item) => sum + item.weight,
+  //       0,
+  //     );
+
+  //     const grandTotalAmount = data.items.reduce(
+  //       (sum, item) => sum + item.totalAmount,
+  //       0,
+  //     );
+
+  //     // ---- HEADER (VENDOR NAME) ----
+  //     doc.setFontSize(20);
+  //     doc.setTextColor(30, 64, 175); // dark blue
+  //     doc.setFont("helvetica", "bold");
+  //     doc.text(data.storeName.toUpperCase(), pageWidth / 2, cursorY, {
+  //       align: "center",
+  //     });
+
+  //     cursorY += 6;
+
+  //     // ---- STORE DETAILS ----
+  //     doc.setFontSize(10);
+  //     doc.setTextColor(60);
+  //     doc.setFont("helvetica", "normal");
+  //     doc.text(
+  //       `${data.storeLocation}`,
+  //       pageWidth / 2,
+  //       cursorY,
+  //       { align: "center" },
+  //     );
+
+  //     cursorY += 8;
+
+  //     // ---- DATE RANGE ----
+  //     doc.setFontSize(10);
+  //     doc.text(`Date: ${fromDate} to ${toDate}`, pageWidth / 2, cursorY, {
+  //       align: "center",
+  //     });
+
+  //     cursorY += 6;
+
+  //     doc.setFontSize(11);
+  //     doc.setTextColor(60);
+  //     doc.setFont("helvetica", "normal");
+  //     doc.text(
+  //       `Vendor: ${data.vendorName}`,
+  //       pageWidth / 2,
+  //       cursorY,
+  //       { align: "center" },
+  //     );
+
+  //     cursorY += 6;
+  //     doc.line(10, cursorY, pageWidth - 10, cursorY);
+  //     cursorY += 8;
+
+  //     // ---- TABLE ----
+  //     autoTable(doc, {
+  //       startY: cursorY,
+  //       head: [["SN", "Material", "Items", "Weight (kg)", "Amount (₹)"]],
+  //       body: data.items.map((item, index) => [
+  //         index + 1,
+  //         item.materialType,
+  //         item.totalItems,
+  //         item.weight,
+  //         item.totalAmount,
+  //       ]),
+  //       foot: [
+  //         [
+  //           {
+  //             content: "Grand Total Weight",
+  //             colSpan: 2,
+  //             styles: { halign: "right", fontStyle: "bold" },
+  //           },
+  //           `${grandTotalWeight.toFixed(2)} kg`,
+  //         ],
+  //         [
+  //           {
+  //             content: "Grand Total Amount",
+  //             colSpan: 2,
+  //             styles: { halign: "right", fontStyle: "bold" },
+  //           },
+  //           `₹ ${grandTotalAmount.toFixed(2)}`,
+  //         ]
+  //       ],
+  //       theme: "grid",
+  //       styles: { fontSize: 10 },
+  //       headStyles: {
+  //         fillColor: [238, 242, 255],
+  //         textColor: [30, 64, 175],
+  //         fontStyle: "bold",
+  //       },
+  //     });
+
+  //     doc.save(
+  //       `${data.storeName.replace(/\s/g, "_")}_${fromDate}_${toDate}.pdf`,
+  //     );
+  //   } catch (error) {
+  //     console.error(error);
+  //     toast.error("Failed to export PDF");
+  //   }
+  // };
+
   const exportPDF = async () => {
-    try {
-      setExportLoader(true);
-      if (!fromDate || !toDate) {
-        toast.error("Please select From and To date");
-        setExportLoader(false);
-        return;
-      }
-
-      const { data } = await axios.get(
-        `${backendUrl}/vendor/transactions-particular-store/${storeId}/${fromDate}/${toDate}`,
-      );
-
-      if (data.success) {
-        setExportLoader(false);
-      }
-
-      const doc = new jsPDF("p", "mm", "a4");
-      const pageWidth = doc.internal.pageSize.getWidth();
-      let cursorY = 15;
-
-      // ---- GRAND TOTAL ----
-      const grandTotalWeight = data.items.reduce(
-        (sum, item) => sum + item.weight,
-        0,
-      );
-
-      // ---- HEADER (VENDOR NAME) ----
-      doc.setFontSize(20);
-      doc.setTextColor(30, 64, 175); // dark blue
-      doc.setFont("helvetica", "bold");
-      doc.text(data.storeName.toUpperCase(), pageWidth / 2, cursorY, {
-        align: "center",
-      });
-
-      cursorY += 6;
-
-      // ---- STORE DETAILS ----
-      doc.setFontSize(10);
-      doc.setTextColor(60);
-      doc.setFont("helvetica", "normal");
-      doc.text(
-        `${data.storeLocation}`,
-        pageWidth / 2,
-        cursorY,
-        { align: "center" },
-      );
-
-      cursorY += 8;
-
-      // ---- DATE RANGE ----
-      doc.setFontSize(10);
-      doc.text(`Date: ${fromDate} to ${toDate}`, pageWidth / 2, cursorY, {
-        align: "center",
-      });
-
-      cursorY += 6;
-
-      doc.setFontSize(11);
-      doc.setTextColor(60);
-      doc.setFont("helvetica", "normal");
-      doc.text(
-        `Vendor: ${data.vendorName}`,
-        pageWidth / 2,
-        cursorY,
-        { align: "center" },
-      );
-
-      cursorY += 6;
-      doc.line(10, cursorY, pageWidth - 10, cursorY);
-      cursorY += 8;
-
-      // ---- TABLE ----
-      autoTable(doc, {
-        startY: cursorY,
-        head: [["SN", "Material", "Items", "Total Weight (kg)"]],
-        body: data.items.map((item, index) => [
-          index + 1,
-          item.materialType,
-          item.totalItems,
-          item.weight,
-        ]),
-        foot: [
-          [
-            {
-              content: "Grand Total",
-              colSpan: 3,
-              styles: { halign: "right", fontStyle: "bold" },
-            },
-            `${grandTotalWeight.toFixed(2)} kg`,
-          ],
-        ],
-        theme: "grid",
-        styles: { fontSize: 10 },
-        headStyles: {
-          fillColor: [238, 242, 255],
-          textColor: [30, 64, 175],
-          fontStyle: "bold",
-        },
-      });
-
-      doc.save(
-        `${data.storeName.replace(/\s/g, "_")}_${fromDate}_${toDate}.pdf`,
-      );
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to export PDF");
+  try {
+    if (!fromDate || !toDate) {
+      toast.error("Please select From and To date");
+      return;
     }
-  };
+
+    setExportLoader(true);
+
+    const { data } = await axios.get(
+      `${backendUrl}/vendor/transactions-particular-store/${storeId}/${fromDate}/${toDate}`
+    );
+
+    if (!data?.success || !Array.isArray(data?.items)) {
+      toast.error("No data found");
+      return;
+    }
+
+    const doc = new jsPDF("p", "mm", "a4");
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let cursorY = 15;
+
+    // ---- GRAND TOTAL ----
+    const grandTotalWeight = data.items.reduce(
+      (sum, item) => sum + Number(item.weight || 0),
+      0
+    );
+
+    const grandTotalAmount = data.items.reduce(
+      (sum, item) => sum + Number(item.totalAmount || 0),
+      0
+    );
+
+    // ---- HEADER (STORE NAME) ----
+    doc.setFontSize(20);
+    doc.setTextColor(30, 64, 175);
+    doc.setFont("helvetica", "bold");
+    doc.text(data.storeName?.toUpperCase() || "STORE REPORT", pageWidth / 2, cursorY, {
+      align: "center",
+    });
+
+    cursorY += 6;
+
+    // ---- STORE DETAILS ----
+    doc.setFontSize(10);
+    doc.setTextColor(60);
+    doc.setFont("helvetica", "normal");
+    doc.text(data.storeLocation || "", pageWidth / 2, cursorY, {
+      align: "center",
+    });
+
+    cursorY += 8;
+
+    // ---- DATE RANGE ----
+    doc.text(`Date: ${fromDate} to ${toDate}`, pageWidth / 2, cursorY, {
+      align: "center",
+    });
+
+    cursorY += 6;
+
+    doc.text(`Vendor: ${data.vendorName || "-"}`, pageWidth / 2, cursorY, {
+      align: "center",
+    });
+
+    cursorY += 6;
+    doc.line(10, cursorY, pageWidth - 10, cursorY);
+    cursorY += 8;
+
+    // ---- TABLE ----
+    autoTable(doc, {
+      startY: cursorY,
+      head: [["SN", "Material", "Items", "Weight (kg)","Rate (Rs.)", "Amount (Rs.)"]],
+      body: data.items.map((item, index) => [
+        index + 1,
+        item.materialType || "-",
+        item.totalItems || 0,
+        Number(item.weight || 0).toFixed(2),
+        Number(item.rate || 0).toFixed(2),
+        Number(item.totalAmount || 0).toFixed(2),
+      ]),
+      foot: [
+        [
+          {
+            content: "Grand Total: ",
+            colSpan: 3,
+            styles: { halign: "right", fontStyle: "bold" },
+          },
+          `${grandTotalWeight.toFixed(2)} kg`,
+          `Rs. ${grandTotalAmount.toFixed(2)}`,
+        ],
+      ],
+      theme: "grid",
+      styles: { fontSize: 10 },
+      headStyles: {
+        fillColor: [238, 242, 255],
+        textColor: [30, 64, 175],
+        fontStyle: "bold",
+      },
+      footStyles: {
+        fontStyle: "bold",
+      },
+    });
+
+    doc.save(
+      `${(data.storeName || "Store")
+        .replace(/\s/g, "_")}_${fromDate}_${toDate}.pdf`
+    );
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to export PDF");
+  } finally {
+    setExportLoader(false); 
+  }
+};
 
   return (
     <div className="min-h-screen bg-slate-100">
