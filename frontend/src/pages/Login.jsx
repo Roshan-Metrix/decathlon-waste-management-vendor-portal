@@ -97,7 +97,7 @@ const Login = () => {
           </div>
 
           {/* Role */}
-          <div className="mb-4 flex gap-6">
+          <div className="mb-4 flex gap-6 ml-4">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="radio"
