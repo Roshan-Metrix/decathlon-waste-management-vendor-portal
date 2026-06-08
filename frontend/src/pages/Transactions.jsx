@@ -7,9 +7,9 @@ import { ImageOff, FileDown } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import NavBar from "../components/NavBar";
-import { TransactionsSkeleton } from "../../utils/Skeleton";
-import useImagePreview from "../../lib/previewImage";
-import { formatDate, formatTime } from "../../lib/Helper";
+import { TransactionsSkeleton } from "../utils/Skeleton";
+import useImagePreview from "../lib/previewImage";
+import { formatDate, formatTime } from "../lib/Helper";
 
 const PRIMARY_COLOR = "#1e40af";
 const ACCENT_COLOR = "#00bcd4";
@@ -27,7 +27,7 @@ const Transactions = () => {
     setLoading(true);
     try {
       const { data } = await axios.get(
-        `${backendUrl}/vendor/particular-transactions/${transactionId}`,
+        `${backendUrl}/vendor/particular-transactions/${transactionId}`, // Same can be access by admin also
       );
 
       if (data.success && data.transactions.length > 0) {
@@ -400,57 +400,66 @@ const Transactions = () => {
           <h3 className="text-lg font-bold mb-4 text-gray-700">
             Items ({transaction.items.length})
           </h3>
-
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {transaction.items.map((item, index) => (
-              <div key={index} className="bg-white rounded-xl shadow-sm border">
+              <div
+                key={index}
+                className="bg-white rounded-xl shadow-md border overflow-hidden hover:shadow-lg transition"
+              >
+                {/* Header */}
                 <div
-                  className="flex justify-between px-4 py-2 text-white"
+                  className="flex justify-between px-4 py-3 text-white"
                   style={{ backgroundColor: PRIMARY_COLOR }}
                 >
                   <span className="font-bold">Item #{item.itemNo}</span>
                   <span>{item.materialType}</span>
                 </div>
 
+                {/* Image */}
                 {getImageSrc(item.image) ? (
                   <img
                     src={getImageSrc(item.image)}
                     alt="Item"
-                    className="w-full h-56 object-cover cursor-pointer"
+                    className="w-full h-48 object-cover cursor-pointer"
                     onClick={() => openImage(getImageSrc(item.image))}
                   />
                 ) : (
-                  <div className="h-56 bg-gray-100 flex items-center justify-center text-gray-400">
+                  <div className="h-48 bg-gray-100 flex items-center justify-center text-gray-400">
                     <ImageOff />
                   </div>
                 )}
 
-                <div className="p-4 text-sm flex justify-between">
-                  <div>
+                {/* Content */}
+                <div className="p-4">
+                  <div className="space-y-2">
                     <p>
-                      <b>Weight:</b> {item.weight} kg
+                      <span className="font-semibold">Weight:</span>{" "}
+                      {item.weight} kg
                     </p>
+
                     <p>
-                      <b>Amount:</b> Rs. {item.weight * item.materialRate}{" "}
-                      &nbsp;
-                      <span className="text-xs text-gray-500">
-                        (Rs.{item.materialRate}/kg)
+                      <span className="font-semibold">Amount:</span> Rs.{" "}
+                      {item.weight * item.materialRate}
+                      <span className="text-xs text-gray-500 ml-1">
+                        (Rs. {item.materialRate}/kg)
                       </span>
                     </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400 text-right">
-                      Added: {formatDate(item.createdAt)}
-                    </p>
-                    <p className="text-xs text-gray-400 text-right">
-                      Source:{" "}
-                      <span className="text-gray-800">{item.weightSource}</span>
-                    </p>
+
+                    <div className="pt-2 border-t text-xs text-gray-500">
+                      <p>Added: {formatDate(item.createdAt)}</p>
+                      <p>
+                        Source:{" "}
+                        <span className="text-gray-700 font-medium">
+                          {item.weightSource}
+                        </span>
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             ))}
           </div>
+          
         </div>
       </div>
       <ImagePreviewModal />
