@@ -11,12 +11,14 @@ import Transactions from "./pages/Transactions";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import { AppContent } from "./context/AppContext";
-import Dashboard from "./pages/Dashboard";
-import StoreRelatedTransactions from "./pages/StoreRelatedTransactions";
+import VendorDashboard from "./pages/vendorPages/VendorDashboard";
+import StoreTransactions from "./pages/vendorPages/StoreTransactions";
+import AdminDashboard from "./pages/adminPages/AdminDashboard";
+import AdminStoreTransactions from "./pages/adminPages/AdminStoreTransactions";
 
 const App = () => {
   
-  const { isLoggedin } = useContext(AppContent);
+  const { isLoggedin, userRole } = useContext(AppContent);
   
   return (
     <div>
@@ -27,13 +29,23 @@ const App = () => {
         <Route path="/reset-password" element={<ResetPassword />} />
         {isLoggedin && (
           <>
-            <Route path="/dashboard/stores" element={<Dashboard />} />
-            <Route path="/dashboard/stores/:storeId" element={<StoreRelatedTransactions />} />
-            <Route
-              path="/dashboard/transactions/:id"
-              element={<Transactions />}
-            />
-            <Route path="/profile" element={<Profile />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route
+            path="/dashboard/stores/:storeId/:id"
+            element={<Transactions />}
+          />
+          </>
+        )}
+        {isLoggedin && userRole === 'vendor' && (
+          <>
+            <Route path="/dashboard/stores" element={<VendorDashboard />} />
+            <Route path="/dashboard/stores/:storeId" element={<StoreTransactions />} />
+          </>
+        )}
+        {isLoggedin && userRole === 'admin' && (
+          <>
+           <Route path="/dashboard/stores" element={<AdminDashboard />} />
+            <Route path="/dashboard/stores/:storeId" element={<AdminStoreTransactions />} />
           </>
         )}
         <Route path="*" element={<NotFound />} />
