@@ -1,11 +1,11 @@
 import React, { useState, useContext, useMemo } from "react";
-import { AppContent } from "../context/AppContext";
-import NavBar from "../components/NavBar.jsx";
 import { useNavigate } from "react-router-dom";
-import TotalBox from "../components/TotalBox.jsx";
+import { AppContent } from "../../context/AppContext.jsx";
+import NavBar from "../../components/NavBar.jsx";
+import TotalBox from '../../components/TotalBox.jsx'
 import { ChevronRight, Search } from "lucide-react";
 
-const Dashboard = () => {
+const VendorDashboard = () => {
   const { storeData, storeLoading } = useContext(AppContent);
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
@@ -112,4 +112,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default VendorDashboard;

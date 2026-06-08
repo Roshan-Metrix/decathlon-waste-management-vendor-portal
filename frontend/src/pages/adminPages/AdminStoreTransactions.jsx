@@ -1,20 +1,21 @@
 import React, { useContext, useEffect, useMemo, useState } from "react";
-import axios from "axios";
-import { AppContent } from "../context/AppContext";
 import { useNavigate, useParams } from "react-router-dom";
 import { FiChevronRight } from "react-icons/fi";
-import NavBar from "../components/NavBar";
-import { FileDown } from "lucide-react";
-import { StoreTransactionSkeleton } from "../../utils/Skeleton";
-import { formatDate } from "../../lib/Helper";
-import jsPDF from "jspdf";
+import axios from "axios";
 import autoTable from "jspdf-autotable";
+import { FileDown } from "lucide-react";
 import { toast } from "react-toastify";
 import { Hourglass } from "react-loader-spinner";
+import jsPDF from "jspdf";
+import { AppContent } from "../../context/AppContext";
+import NavBar from "../../components/NavBar";
+import { StoreTransactionSkeleton } from "../../utils/Skeleton";
+import { formatDate } from "../../lib/Helper";
 
 const PAGE_SIZES = [6, 10];
+const LIMIT = 6;
 
-const StoreRelatedTransactions = () => {
+const AdminStoreTransactions = () => {
   const { backendUrl } = useContext(AppContent);
   const navigate = useNavigate();
   const { storeId } = useParams();
@@ -32,15 +33,22 @@ const StoreRelatedTransactions = () => {
   const [pageSize, setPageSize] = useState(6);
 
   const [exportLoader, setExportLoader] = useState(false);
+  const [storeName, setStoreName] = useState("");
+
+  const [hasMore, setHasMore] = useState(false);
 
   /*  FETCH DATA  */
   const fetchTransactions = async () => {
     try {
       setLoading(true);
       const { data } = await axios.get(
-        `${backendUrl}/vendor/transactions-particular-store/${storeId}`,
+        `${backendUrl}/transaction/store-total-transactions/${storeId}?page=${currentPage}&limit=${pageSize}`,
       );
-      if (data.success) setTransactions(data.transactions);
+      if (data.success) {
+        setTransactions(data.transactions);
+        setStoreName(data.store.storeName);
+        setHasMore(data.hasMore);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -50,7 +58,7 @@ const StoreRelatedTransactions = () => {
 
   useEffect(() => {
     fetchTransactions();
-  }, []);
+  }, [currentPage, pageSize]);
 
   /*  DATE PRESETS  */
   const applyPreset = (preset) => {
@@ -132,132 +140,142 @@ const StoreRelatedTransactions = () => {
         data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     }
 
-    setCurrentPage(1);
     return data;
   }, [transactions, searchManager, sortOption, fromDate, toDate]);
 
-  /*  PAGINATION  */
-  const totalPages = Math.ceil(filteredTransactions.length / pageSize);
-  const paginatedData = filteredTransactions.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize,
-  );
+  const paginatedData = filteredTransactions;
 
   const exportPDF = async () => {
-  try {
-    if (!fromDate || !toDate) {
-      toast.error("Please select From and To date");
-      return;
-    }
+    try {
+      if (!fromDate || !toDate) {
+        toast.error("Please select From and To date");
+        return;
+      }
 
-    setExportLoader(true);
+      setExportLoader(true);
 
-    const { data } = await axios.get(
-      `${backendUrl}/vendor/transactions-particular-store/${storeId}/${fromDate}/${toDate}`
-    );
+      const { data } = await axios.get(
+        `${backendUrl}/transaction/get-store-filter-transactions/${storeId}/${fromDate}/${toDate}`,
+      );
 
-    if (!data?.success || !Array.isArray(data?.items)) {
-      toast.error("No data found");
-      return;
-    }
+      if (!data?.success || !Array.isArray(data?.items)) {
+        toast.error("No data found");
+        return;
+      }
 
-    const doc = new jsPDF("p", "mm", "a4");
-    const pageWidth = doc.internal.pageSize.getWidth();
-    let cursorY = 15;
+      const doc = new jsPDF("p", "mm", "a4");
+      const pageWidth = doc.internal.pageSize.getWidth();
+      let cursorY = 15;
 
-    // ---- GRAND TOTAL ----
-    const grandTotalWeight = data.items.reduce(
-      (sum, item) => sum + Number(item.weight || 0),
-      0
-    );
+      // ---- GRAND TOTAL ----
+      const grandTotalWeight = data.items.reduce(
+        (sum, item) => sum + Number(item.weight || 0),
+        0,
+      );
 
-    const grandTotalAmount = data.items.reduce(
-      (sum, item) => sum + Number(item.totalAmount || 0),
-      0
-    );
+      const grandTotalAmount = data.items.reduce(
+        (sum, item) => sum + Number(item.totalAmount || 0),
+        0,
+      );
 
-    // ---- HEADER (STORE NAME) ----
-    doc.setFontSize(20);
-    doc.setTextColor(30, 64, 175);
-    doc.setFont("helvetica", "bold");
-    doc.text(data.storeName?.toUpperCase() || "STORE REPORT", pageWidth / 2, cursorY, {
-      align: "center",
-    });
+      // ---- HEADER (STORE NAME) ----
+      doc.setFontSize(20);
+      doc.setTextColor(30, 64, 175);
+      doc.setFont("helvetica", "bold");
+      doc.text(
+        data.storeName?.toUpperCase() || "STORE REPORT",
+        pageWidth / 2,
+        cursorY,
+        {
+          align: "center",
+        },
+      );
 
-    cursorY += 6;
+      cursorY += 6;
 
-    // ---- STORE DETAILS ----
-    doc.setFontSize(10);
-    doc.setTextColor(60);
-    doc.setFont("helvetica", "normal");
-    doc.text(data.storeLocation || "", pageWidth / 2, cursorY, {
-      align: "center",
-    });
+      // ---- STORE DETAILS ----
+      doc.setFontSize(10);
+      doc.setTextColor(60);
+      doc.setFont("helvetica", "normal");
+      doc.text(data.storeLocation || "", pageWidth / 2, cursorY, {
+        align: "center",
+      });
 
-    cursorY += 8;
+      cursorY += 8;
 
-    // ---- DATE RANGE ----
-    doc.text(`Date: ${fromDate} to ${toDate}`, pageWidth / 2, cursorY, {
-      align: "center",
-    });
+      // ---- DATE RANGE ----
+      doc.text(`Date: ${fromDate} to ${toDate}`, pageWidth / 2, cursorY, {
+        align: "center",
+      });
 
-    cursorY += 6;
+      cursorY += 6;
 
-    doc.text(`Vendor: ${data.vendorName || "-"}`, pageWidth / 2, cursorY, {
-      align: "center",
-    });
+      doc.text(`Vendor: ${data.vendorName || "-"}`, pageWidth / 2, cursorY, {
+        align: "center",
+      });
 
-    cursorY += 6;
-    doc.line(10, cursorY, pageWidth - 10, cursorY);
-    cursorY += 8;
+      cursorY += 6;
+      doc.line(10, cursorY, pageWidth - 10, cursorY);
+      cursorY += 8;
 
-    // ---- TABLE ----
-    autoTable(doc, {
-      startY: cursorY,
-      head: [["SN", "Material", "Items", "Weight (kg)","Rate (Rs.)", "Amount (Rs.)"]],
-      body: data.items.map((item, index) => [
-        index + 1,
-        item.materialType || "-",
-        item.totalItems || 0,
-        Number(item.weight || 0).toFixed(2),
-        Number(item.rate || 0).toFixed(2),
-        Number(item.totalAmount || 0).toFixed(2),
-      ]),
-      foot: [
-        [
-          {
-            content: "Grand Total: ",
-            colSpan: 3,
-            styles: { halign: "right", fontStyle: "bold" },
-          },
-          `${grandTotalWeight.toFixed(2)} kg`,
-          "",
-          `Rs. ${grandTotalAmount.toFixed(2)}`,
+      // ---- TABLE ----
+      autoTable(doc, {
+        startY: cursorY,
+        head: [
+          [
+            "SN",
+            "Material",
+            "Items",
+            "Weight (kg)",
+            "Rate (Rs.)",
+            "Amount (Rs.)",
+          ],
         ],
-      ],
-      theme: "grid",
-      styles: { fontSize: 10 },
-      headStyles: {
-        fillColor: [238, 242, 255],
-        textColor: [30, 64, 175],
-        fontStyle: "bold",
-      },
-      footStyles: {
-        fontStyle: "bold",
-      },
-    });
+        body: data.items.map((item, index) => [
+          index + 1,
+          item.materialType || "-",
+          item.totalItems || 0,
+          Number(item.weight || 0).toFixed(2),
+          Number(item.rate || 0).toFixed(2),
+          Number(item.totalAmount || 0).toFixed(2),
+        ]),
+        foot: [
+          [
+            {
+              content: "Grand Total: ",
+              colSpan: 3,
+              styles: { halign: "right", fontStyle: "bold" },
+            },
+            `${grandTotalWeight.toFixed(2)} kg`,
+            "",
+            `Rs. ${grandTotalAmount.toFixed(2)}`,
+          ],
+        ],
+        theme: "grid",
+        styles: { fontSize: 10 },
+        headStyles: {
+          fillColor: [238, 242, 255],
+          textColor: [30, 64, 175],
+          fontStyle: "bold",
+        },
+        footStyles: {
+          fontStyle: "bold",
+        },
+      });
 
-    doc.save(
-      `${(data.storeName || "Store")
-        .replace(/\s/g, "_")}_${fromDate}_${toDate}.pdf`
-    );
-  } catch (error) {
-    console.error(error);
-    toast.error("Failed to export PDF");
-  } finally {
-    setExportLoader(false); 
-  }
-};
+      doc.save(
+        `${(data.storeName || "Store").replace(
+          /\s/g,
+          "_",
+        )}_${fromDate}_${toDate}.pdf`,
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to export PDF");
+    } finally {
+      setExportLoader(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -266,9 +284,7 @@ const StoreRelatedTransactions = () => {
       <div className="w-full rounded-lg p-6 mt-20">
         <div className="max-w-6xl mx-auto px-4">
           <h1 className="text-2xl font-bold text-primaryColor mb-4">
-            {loading
-              ? "Store Transactions"
-              : transactions[0]?.storeName || "Store Transactions"}
+            {loading ? "Store Transactions" : storeName || "Store Transactions"}
           </h1>
           {/*  FILTER BAR  */}
           <div className="bg-white rounded-xl p-4 mb-6 space-y-4">
@@ -336,20 +352,21 @@ const StoreRelatedTransactions = () => {
                   </button>
                 ))}
               </div>
-              <button
-                onClick={exportPDF}
-              >
+              <button onClick={exportPDF}>
                 {exportLoader ? (
                   <span className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 cursor-pointer">
-                  <Hourglass
-                    visible={true}
-                    height="20"
-                    width="20"
-                    ariaLabel="hourglass-loading"
-                    colors={["#fff", "#fff"]}
-                  /></span>
+                    <Hourglass
+                      visible={true}
+                      height="20"
+                      width="20"
+                      ariaLabel="hourglass-loading"
+                      colors={["#fff", "#fff"]}
+                    />
+                  </span>
                 ) : (
-                   <span className="flex items-center gap-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 px-4 py-2 cursor-pointer"><FileDown size={16} /> Export PDF</span>
+                  <span className="flex items-center gap-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 px-4 py-2 cursor-pointer">
+                    <FileDown size={16} /> Export PDF
+                  </span>
                 )}
               </button>
             </div>
@@ -384,7 +401,7 @@ const StoreRelatedTransactions = () => {
                       size={22}
                       className="cursor-pointer text-primaryColor hover:translate-x-1 transition"
                       onClick={() =>
-                        navigate(`/dashboard/transactions/${txn.transactionId}`)
+                        navigate(`/dashboard/stores/${storeId}/${txn.transactionId}`)
                       }
                     />
                   </div>
@@ -394,7 +411,7 @@ const StoreRelatedTransactions = () => {
                       <b>Manager:</b> {txn.managerName}
                     </p>
                     <p>
-                      <b>Total Wastes:</b> {txn.totalItems}
+                      <b>Total Wastes:</b> {txn.item}
                     </p>
                     <p>
                       <b>Date:</b> {formatDate(txn.createdAt)}
@@ -406,33 +423,29 @@ const StoreRelatedTransactions = () => {
           )}
 
           {/*  PAGINATION  */}
-          {totalPages > 1 && !loading && (
-            <div className="flex justify-center items-center gap-4 mt-8">
-              <button
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((p) => p - 1)}
-                className="px-4 py-2 border rounded disabled:opacity-50"
-              >
-                Prev
-              </button>
+          <div className="flex justify-center items-center gap-4 mt-8">
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+              className="px-4 py-2 border rounded disabled:opacity-50"
+            >
+              Prev
+            </button>
 
-              <span className="text-sm">
-                Page {currentPage} of {totalPages}
-              </span>
+            <span className="text-sm">Page {currentPage}</span>
 
-              <button
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((p) => p + 1)}
-                className="px-4 py-2 border rounded disabled:opacity-50"
-              >
-                Next
-              </button>
-            </div>
-          )}
+            <button
+              disabled={!hasMore}
+              onClick={() => setCurrentPage((p) => p + 1)}
+              className="px-4 py-2 border rounded disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default StoreRelatedTransactions;
+export default AdminStoreTransactions;

@@ -9,40 +9,46 @@ import { Loader2 } from "lucide-react";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { backendUrl, setIsLoggedin, getUserData } =
-    useContext(AppContent);
+  const { backendUrl, setIsLoggedin, getUserData, setUserRole } = useContext(AppContent);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const role = "vendor";
-
-  axios.defaults.withCredentials = true;
-  
   const onSubmitHandler = async (e) => {
     e.preventDefault();
     if (isLoading) return;
 
+    const allowedRoles = ["vendor", "admin"];
+    if (!allowedRoles.includes(role)) {
+      toast.error("Please select a valid role.");
+      return;
+    }
+
     setIsLoading(true);
 
+    const endpoint = role === "vendor" ? "/vendor/login" : "/auth/login";
+
     try {
-      const { data } = await axios.post(
-        `${backendUrl}/vendor/login`,
-        { email, password, role }
-      );
+      const { data } = await axios.post(`${backendUrl}${endpoint}`, {
+        email,
+        password,
+        role,
+      });
 
       if (data.success) {
+        const authRole = role; // 'vendor' or 'admin'
+        localStorage.setItem("authRole", authRole);
         setIsLoggedin(true);
-        await getUserData();
+        setUserRole(authRole)
+        await getUserData(role);
         navigate("/");
       } else {
-        toast.error(data.message);
+        toast.error(data.message || "Invalid credentials");
       }
     } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Login failed. Try again."
-      );
+      toast.error(error.response?.data?.message || "Login failed. Try again.");
     } finally {
       setIsLoading(false);
     }
@@ -88,6 +94,34 @@ const Login = () => {
               required
               className="bg-transparent outline-none placeholder-gray-400 flex-1 disabled:opacity-60"
             />
+          </div>
+
+          {/* Role */}
+          <div className="mb-4 flex gap-6 ml-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="role"
+                value="vendor"
+                checked={role === "vendor"}
+                disabled={isLoading}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-4 h-4 disabled:opacity-60"
+              />
+              <span className="text-gray-700">Vendor</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="role"
+                value="admin"
+                checked={role === "admin"}
+                disabled={isLoading}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-4 h-4 disabled:opacity-60"
+              />
+              <span className="text-gray-700">Admin</span>
+            </label>
           </div>
 
           {/* Forgot Password */}
