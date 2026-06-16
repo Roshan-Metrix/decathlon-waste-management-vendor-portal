@@ -33,8 +33,6 @@ const AdminDashboard = () => {
         `${backendUrl}/transaction/get-stores-total-transactions?page=${pageNumber}&limit=${LIMIT}`
       );
 
-      console.log("API Response:", data);
-
       if (data.success) {
         if (pageNumber === 1) {
           setStores(data.stores || []);

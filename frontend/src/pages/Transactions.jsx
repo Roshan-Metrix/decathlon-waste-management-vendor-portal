@@ -15,7 +15,7 @@ const PRIMARY_COLOR = "#1e40af";
 const ACCENT_COLOR = "#00bcd4";
 
 const Transactions = () => {
-  const { backendUrl } = useContext(AppContent);
+  const { backendUrl, userRole } = useContext(AppContent);
   const { id: transactionId } = useParams();
   const { openImage, ImagePreviewModal } = useImagePreview();
 
@@ -69,7 +69,7 @@ const Transactions = () => {
       materialRate:
         items.find((it) => it.materialType === materialType)?.materialRate || 0,
       itemCount: data.count,
-      totalWeight: data.weight.toFixed(2),
+      totalWeight: data.weight,
     }));
   };
 
@@ -439,7 +439,7 @@ const Transactions = () => {
 
                     <p>
                       <span className="font-semibold">Amount:</span> Rs.{" "}
-                      {item.weight * item.materialRate}
+                      {Number(item.weight * item.materialRate).toFixed(2)}
                       <span className="text-xs text-gray-500 ml-1">
                         (Rs. {item.materialRate}/kg)
                       </span>
@@ -454,12 +454,40 @@ const Transactions = () => {
                         </span>
                       </p>
                     </div>
+
+                    {userRole === "admin" && (
+                      <div
+                        className={`pt-2 p-2 border text-xs ${
+                          (1 -
+                            Math.abs(item.weight - item.aiWeight) /
+                              Math.abs(item.weight)) *
+                            100 ===
+                          100
+                            ? "bg-green-100 border-green-500 text-green-800"
+                            : "bg-red-100 border-red-500 text-red-800"
+                        }`}
+                      >
+                        <p>AI Output: {item.aiWeight} kg</p>
+
+                        <p>
+                          Accuracy:{" "}
+                          <span className="font-medium">
+                            {(
+                              (1 -
+                                Math.abs(item.weight - item.aiWeight) /
+                                  Math.abs(item.weight)) *
+                              100
+                            ).toFixed(2)}
+                            %
+                          </span>
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             ))}
           </div>
-          
         </div>
       </div>
       <ImagePreviewModal />
@@ -468,12 +496,3 @@ const Transactions = () => {
 };
 
 export default Transactions;
-
-/* SIGNATURE SECTION */
-// doc.setFontSize(11);
-// doc.text("Manager Signature", 40, cursorY);
-// doc.text("Vendor Signature", pageWidth - 70, cursorY);
-
-// cursorY += 20;
-// doc.line(20, cursorY, 80, cursorY);
-// doc.line(pageWidth - 80, cursorY, pageWidth - 20, cursorY);
