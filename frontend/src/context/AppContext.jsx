@@ -11,55 +11,54 @@ export const AppContentProvider = ({ children }) => {
   const [isLoggedin, setIsLoggedin] = useState(false);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [userRole, setUserRole] = useState(null)
+  const [userRole, setUserRole] = useState(null);
 
   // Store data
   const [storeData, setStoreData] = useState();
   const [storeLoading, setStoreLoading] = useState(false);
 
+  const getUserData = async (passedRole) => {
+    const authRole = passedRole || localStorage.getItem("authRole");
 
-const getUserData = async (passedRole) => {
- 
-  const authRole = passedRole || localStorage.getItem('authRole');
-
-  if (!authRole) {
-    setUserData(null);
-    setIsLoggedin(false);
-    setLoading(false);
-    return false;
-  }
-
-  try {
-    setUserRole(authRole);
-    const endpoint = authRole === 'vendor' ? '/vendor/profile' : '/auth/profile';
-    
-    // Axios automatically sends the "vendorToken" cookie
-    const { data } = await axios.get(`${backendUrl}${endpoint}`);
-
-    if (data.success) {
-      const profileData = authRole === 'vendor' ? data.vendor : data.user;
-      
-      setUserData(profileData);
-      setIsLoggedin(true);
-      return true;
-    } else {
-      handleLogout();
+    if (!authRole) {
+      setUserData(null);
+      setIsLoggedin(false);
+      setLoading(false);
       return false;
     }
-  } catch (error) {
-    handleLogout();
-    return false;
-  } finally {
-    setLoading(false);
-  }
-};
 
-const handleLogout = () => {
-  setUserData(null);
-  setIsLoggedin(false);
-  setUserRole(null); // add this
-  localStorage.removeItem('authRole'); // Clear on logout
-};
+    try {
+      setUserRole(authRole);
+      const endpoint =
+        authRole === "vendor" ? "/vendor/profile" : "/auth/profile";
+
+      // Axios automatically sends the "vendorToken" cookie
+      const { data } = await axios.get(`${backendUrl}${endpoint}`);
+
+      if (data.success) {
+        const profileData = authRole === "vendor" ? data.vendor : data.user;
+
+        setUserData(profileData);
+        setIsLoggedin(true);
+        return true;
+      } else {
+        handleLogout();
+        return false;
+      }
+    } catch (error) {
+      handleLogout();
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    setUserData(null);
+    setIsLoggedin(false);
+    setUserRole(null); // add this
+    localStorage.removeItem("authRole"); // Clear on logout
+  };
 
   const fetchStores = async () => {
     setStoreLoading(true);
@@ -83,12 +82,14 @@ const handleLogout = () => {
   }, []);
 
   useEffect(() => {
-    if (isLoggedin) {
-      fetchStores();
-    } else {
-      setStoreData(null);
+    if (userRole === "vendor") {
+      if (isLoggedin) {
+        fetchStores();
+      } else {
+        setStoreData(null);
+      }
     }
-  }, [isLoggedin]);
+  }, [isLoggedin, userRole]);
 
   const value = {
     backendUrl,
