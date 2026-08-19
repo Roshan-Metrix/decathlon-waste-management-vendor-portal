@@ -9,6 +9,7 @@ import {
   LogOut,
   ChevronDown,
 } from "lucide-react";
+import SideBar from "./Sidebar";
 
 const NavBar = () => {
   const navigate = useNavigate();
@@ -36,13 +37,14 @@ const NavBar = () => {
     <nav className="w-full flex justify-between items-center px-6 sm:px-20 py-4 bg-white shadow-sm fixed top-0 z-50 mb-4">
       {/* Logo */}
       <div
-        className="flex items-center cursor-pointer"
-        onClick={() => navigate("/")}
-      >
+        className="flex items-center cursor-pointer gap-0 sm:gap-2"
+        >
+          {userData && userData.role == 'admin' && window.location.pathname !== "/" && <SideBar />}
         <img
           src={assets.logo}
           alt="Logo"
           className="w-32 sm:w-54"
+          onClick={() => navigate("/")}
         />
       </div>
 
