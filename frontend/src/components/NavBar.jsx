@@ -34,7 +34,7 @@ const NavBar = () => {
   };
 
   return (
-    <nav className="w-full flex justify-between items-center px-6 sm:px-20 py-4 bg-white shadow-sm fixed top-0 z-50 mb-4">
+    <nav className="w-full flex justify-between items-center px-6 sm:px-20 py-3 bg-white shadow-sm fixed top-0 z-50 mb-4">
       {/* Logo */}
       <div
         className="flex items-center cursor-pointer gap-0 sm:gap-2"

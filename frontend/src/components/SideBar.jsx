@@ -11,6 +11,7 @@ import {
   HelpCircle,
   User,
   ChevronDown,
+  Warehouse,
 } from "lucide-react";
 import { assets } from "../assets/assets";
 import { useNavigate } from "react-router-dom";
@@ -110,22 +111,114 @@ export default function SideBar() {
               {openSubmenu === "stores" && (
                 <div className="mt-1 ml-9 pl-3 border-l-2 border-slate-100 space-y-1">
                   <button
-                    onClick={() => handleNavigation("/stores/add")}
+                    onClick={() => handleNavigation("/dashboard/stores/add-stores")}
                     className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
                   >
                     Add Stores
                   </button>
                   <button
-                    onClick={() => handleNavigation("/stores/edit")}
+                    onClick={() => handleNavigation("/dashboard/stores/edit-stores")}
                     className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
                   >
                     Edit Stores
                   </button>
                   <button
-                    onClick={() => handleNavigation("/stores/view")}
+                    onClick={() => handleNavigation("/dashboard/stores/view-stores")}
                     className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
                   >
                     View Stores
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Manager Management Accordion */}
+            <div>
+              <button
+                onClick={() => toggleSubmenu("managers")}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-colors cursor-pointer ${
+                  openSubmenu === "managers"
+                    ? "bg-slate-100 text-blue-700 font-semibold"
+                    : "text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Users className="w-5 h-5 text-slate-400" />
+                  Manager Management
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform duration-200 ${
+                    openSubmenu === "managers" ? "rotate-180 text-blue-600" : "text-slate-400"
+                  }`}
+                />
+              </button>
+
+              {/* Submenu Links */}
+              {openSubmenu === "managers" && (
+                <div className="mt-1 ml-9 pl-3 border-l-2 border-slate-100 space-y-1">
+                  <button
+                    onClick={() => handleNavigation("/dashboard/managers/add-managers")}
+                    className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Add Managers
+                  </button>
+                  <button
+                    onClick={() => handleNavigation("/dashboard/managers/edit-managers")}
+                    className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Edit Managers
+                  </button>
+                  <button
+                    onClick={() => handleNavigation("/dashboard/managers/view-managers")}
+                    className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
+                  >
+                    View Managers
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Vendor Management Accordion */}
+            <div>
+              <button
+                onClick={() => toggleSubmenu("vendors")}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-colors cursor-pointer ${
+                  openSubmenu === "vendors"
+                    ? "bg-slate-100 text-blue-700 font-semibold"
+                    : "text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Warehouse className="w-5 h-5 text-slate-400" />
+                  Vendor Management
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform duration-200 ${
+                    openSubmenu === "vendors" ? "rotate-180 text-blue-600" : "text-slate-400"
+                  }`}
+                />
+              </button>
+
+              {/* Submenu Links */}
+              {openSubmenu === "vendors" && (
+                <div className="mt-1 ml-9 pl-3 border-l-2 border-slate-100 space-y-1">
+                  <button
+                    onClick={() => handleNavigation("/dashboard/vendors/add-vendors")}
+                    className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Add Vendors
+                  </button>
+                  <button
+                    onClick={() => handleNavigation("/dashboard/vendors/edit-vendors")}
+                    className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Edit Vendors
+                  </button>
+                  <button
+                    onClick={() => handleNavigation("/dashboard/vendors/view-vendors")}
+                    className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
+                  >
+                    View Vendors
                   </button>
                 </div>
               )}
