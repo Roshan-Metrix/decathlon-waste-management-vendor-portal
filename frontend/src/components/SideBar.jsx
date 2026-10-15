@@ -117,16 +117,16 @@ export default function SideBar() {
                     Add Stores
                   </button>
                   <button
-                    onClick={() => handleNavigation("/dashboard/stores/edit-stores")}
-                    className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
-                  >
-                    Edit Stores
-                  </button>
-                  <button
                     onClick={() => handleNavigation("/dashboard/stores/view-stores")}
                     className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
                   >
                     View Stores
+                  </button>
+                  <button
+                    onClick={() => handleNavigation("/dashboard/stores/remove-stores")}
+                    className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Remove Stores
                   </button>
                 </div>
               )}
@@ -163,16 +163,16 @@ export default function SideBar() {
                     Add Managers
                   </button>
                   <button
-                    onClick={() => handleNavigation("/dashboard/managers/edit-managers")}
-                    className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
-                  >
-                    Edit Managers
-                  </button>
-                  <button
                     onClick={() => handleNavigation("/dashboard/managers/view-managers")}
                     className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
                   >
                     View Managers
+                  </button>
+                  <button
+                    onClick={() => handleNavigation("/dashboard/managers/remove-managers")}
+                    className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Remove Managers
                   </button>
                 </div>
               )}
@@ -225,7 +225,7 @@ export default function SideBar() {
             </div>
 
             {/* Waste Tracking Accordion */}
-            <div>
+            {/* <div>
               <button
                 onClick={() => toggleSubmenu("waste")}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-colors cursor-pointer ${
@@ -261,10 +261,10 @@ export default function SideBar() {
                   </button>
                 </div>
               )}
-            </div>
+            </div> */}
 
             {/* Analytics Accordion */}
-            <div>
+            {/* <div>
               <button
                 onClick={() => toggleSubmenu("analytics")}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-colors cursor-pointer ${
@@ -300,7 +300,7 @@ export default function SideBar() {
                   </button>
                 </div>
               )}
-            </div>
+            </div> */}
 
             {/* Team Accordion */}
             <div>
@@ -342,22 +342,22 @@ export default function SideBar() {
             </div>
 
             {/* Settings Link */}
-            <button
+            {/* <button
               onClick={() => handleNavigation("/settings")}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 font-medium text-sm transition-colors text-left cursor-pointer"
             >
               <Settings className="w-5 h-5 text-slate-400" />
               Settings
-            </button>
+            </button> */}
 
             {/* Help Link */}
-            <button
+            {/* <button
               onClick={() => handleNavigation("/help")}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 font-medium text-sm transition-colors text-left cursor-pointer"
             >
               <HelpCircle className="w-5 h-5 text-slate-400" />
               Help & Support
-            </button>
+            </button> */}
           </nav>
         </div>
 
