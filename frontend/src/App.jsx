@@ -26,10 +26,13 @@ import ViewStores from "./pages/adminPages/storesManage/ViewStores";
 import AddManagers from "./pages/adminPages/managersManage/AddManagers";
 import ViewManagers from "./pages/adminPages/managersManage/ViewManagers";
 import AddVendors from "./pages/adminPages/vendorsManage/AddVendors";
-import EditVendors from "./pages/adminPages/vendorsManage/EditVendors";
 import ViewVendors from "./pages/adminPages/vendorsManage/ViewVendors";
 import RemoveStores from "./pages/adminPages/storesManage/RemoveStores";
 import RemoveManagers from "./pages/adminPages/managersManage/RemoveManagers";
+import RemoveVendors from "./pages/adminPages/vendorsManage/RemoveVendors";
+import ViewAdmins from "./pages/adminPages/manageAdmins/ViewAdmins";
+import AddAdmins from "./pages/adminPages/manageAdmins/AddAdmins";
+import RestrictAccess from "./pages/adminPages/manageAdmins/RestrictAccess";
 
 const App = () => {
   const { isLoggedin, userRole } = useContext(AppContent);
@@ -136,16 +139,38 @@ const App = () => {
               element={<AddVendors />}
             />
 
-            {/* /dashboard/vendors/edit-vendors */}
+            {/* /dashboard/vendors/remove-vendors */}
             <Route
-              path="edit-vendors"
-              element={<EditVendors />}
+              path="remove-vendors"
+              element={<RemoveVendors />}
             />
 
             {/* /dashboard/vendors/view-vendors */}
             <Route
               path="view-vendors"
               element={<ViewVendors />}
+            />
+          </Route>
+          <Route path="/dashboard/teams">
+            {/* /dashboard/stores */}
+            <Route index element={<AdminDashboard />} />
+
+            {/* /dashboard/vendors/add-vendors */}
+            <Route
+              path="add-members"
+              element={<AddAdmins />}
+            />
+
+            {/* /dashboard/vendors/remove-vendors */}
+            <Route
+              path="view-members"
+              element={<ViewAdmins />}
+            />
+
+            {/* /dashboard/vendors/view-vendors */}
+            <Route
+              path="restrict-access"
+              element={<RestrictAccess />}
             />
           </Route>
          </>

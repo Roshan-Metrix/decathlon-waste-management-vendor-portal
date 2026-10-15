@@ -40,7 +40,6 @@ const AddVendors = () => {
     setPassword(generatePassword());
     fetchRegions();
     // Initial data load only.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

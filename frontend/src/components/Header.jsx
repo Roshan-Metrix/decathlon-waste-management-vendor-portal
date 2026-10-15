@@ -13,11 +13,11 @@ const Header = () => {
         <img src={assets.header_img} alt="" className="w-50 h-40" />
       </div>
       <h1 className="flex items-center gap-2 text-xl sm:text-3xl font-medium mb-2">
-        Hey {userData ? userData.name : "Vendor"}!
+        Hey {userData ? userData.name : ""}!
       </h1>
 
       <h2 className="text-3xl sm:text-5xl  font-semibold mb-4">
-        Welcome {userData ? "Back To" : "To"} DecaWaste
+        Welcome {userData ? "Back To" : "To"} Valories
       </h2>
 
       <p className="mb-8 max-w-md">SPORT FOR ALL - ALL FOR SPORTS</p>

@@ -229,9 +229,6 @@ const RemoveStores = () => {
                         </p>
                       </div>
                     </div>
-                    <span className="ml-2 rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
-                      Removable
-                    </span>
                   </div>
 
                   <div className="mb-4 space-y-2.5">

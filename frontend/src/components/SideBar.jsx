@@ -102,7 +102,9 @@ export default function SideBar() {
                 </div>
                 <ChevronDown
                   className={`w-4 h-4 transition-transform duration-200 ${
-                    openSubmenu === "stores" ? "rotate-180 text-blue-600" : "text-slate-400"
+                    openSubmenu === "stores"
+                      ? "rotate-180 text-blue-600"
+                      : "text-slate-400"
                   }`}
                 />
               </button>
@@ -111,19 +113,25 @@ export default function SideBar() {
               {openSubmenu === "stores" && (
                 <div className="mt-1 ml-9 pl-3 border-l-2 border-slate-100 space-y-1">
                   <button
-                    onClick={() => handleNavigation("/dashboard/stores/add-stores")}
+                    onClick={() =>
+                      handleNavigation("/dashboard/stores/add-stores")
+                    }
                     className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
                   >
                     Add Stores
                   </button>
                   <button
-                    onClick={() => handleNavigation("/dashboard/stores/view-stores")}
+                    onClick={() =>
+                      handleNavigation("/dashboard/stores/view-stores")
+                    }
                     className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
                   >
                     View Stores
                   </button>
                   <button
-                    onClick={() => handleNavigation("/dashboard/stores/remove-stores")}
+                    onClick={() =>
+                      handleNavigation("/dashboard/stores/remove-stores")
+                    }
                     className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
                   >
                     Remove Stores
@@ -148,7 +156,9 @@ export default function SideBar() {
                 </div>
                 <ChevronDown
                   className={`w-4 h-4 transition-transform duration-200 ${
-                    openSubmenu === "managers" ? "rotate-180 text-blue-600" : "text-slate-400"
+                    openSubmenu === "managers"
+                      ? "rotate-180 text-blue-600"
+                      : "text-slate-400"
                   }`}
                 />
               </button>
@@ -157,19 +167,25 @@ export default function SideBar() {
               {openSubmenu === "managers" && (
                 <div className="mt-1 ml-9 pl-3 border-l-2 border-slate-100 space-y-1">
                   <button
-                    onClick={() => handleNavigation("/dashboard/managers/add-managers")}
+                    onClick={() =>
+                      handleNavigation("/dashboard/managers/add-managers")
+                    }
                     className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
                   >
                     Add Managers
                   </button>
                   <button
-                    onClick={() => handleNavigation("/dashboard/managers/view-managers")}
+                    onClick={() =>
+                      handleNavigation("/dashboard/managers/view-managers")
+                    }
                     className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
                   >
                     View Managers
                   </button>
                   <button
-                    onClick={() => handleNavigation("/dashboard/managers/remove-managers")}
+                    onClick={() =>
+                      handleNavigation("/dashboard/managers/remove-managers")
+                    }
                     className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
                   >
                     Remove Managers
@@ -194,7 +210,9 @@ export default function SideBar() {
                 </div>
                 <ChevronDown
                   className={`w-4 h-4 transition-transform duration-200 ${
-                    openSubmenu === "vendors" ? "rotate-180 text-blue-600" : "text-slate-400"
+                    openSubmenu === "vendors"
+                      ? "rotate-180 text-blue-600"
+                      : "text-slate-400"
                   }`}
                 />
               </button>
@@ -203,22 +221,28 @@ export default function SideBar() {
               {openSubmenu === "vendors" && (
                 <div className="mt-1 ml-9 pl-3 border-l-2 border-slate-100 space-y-1">
                   <button
-                    onClick={() => handleNavigation("/dashboard/vendors/add-vendors")}
+                    onClick={() =>
+                      handleNavigation("/dashboard/vendors/add-vendors")
+                    }
                     className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
                   >
                     Add Vendors
                   </button>
                   <button
-                    onClick={() => handleNavigation("/dashboard/vendors/edit-vendors")}
-                    className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
-                  >
-                    Edit Vendors
-                  </button>
-                  <button
-                    onClick={() => handleNavigation("/dashboard/vendors/view-vendors")}
+                    onClick={() =>
+                      handleNavigation("/dashboard/vendors/view-vendors")
+                    }
                     className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
                   >
                     View Vendors
+                  </button>
+                  <button
+                    onClick={() =>
+                      handleNavigation("/dashboard/vendors/remove-vendors")
+                    }
+                    className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Remove Vendors
                   </button>
                 </div>
               )}
@@ -318,7 +342,9 @@ export default function SideBar() {
                 </div>
                 <ChevronDown
                   className={`w-4 h-4 transition-transform duration-200 ${
-                    openSubmenu === "team" ? "rotate-180 text-blue-600" : "text-slate-400"
+                    openSubmenu === "team"
+                      ? "rotate-180 text-blue-600"
+                      : "text-slate-400"
                   }`}
                 />
               </button>
@@ -326,16 +352,22 @@ export default function SideBar() {
               {openSubmenu === "team" && (
                 <div className="mt-1 ml-9 pl-3 border-l-2 border-slate-100 space-y-1">
                   <button
-                    onClick={() => handleNavigation("/team/members")}
+                    onClick={() => handleNavigation("/dashboard/teams/add-members")}
                     className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
                   >
-                    All Members
+                    Add Members
                   </button>
                   <button
-                    onClick={() => handleNavigation("/team/roles")}
+                    onClick={() => handleNavigation("/dashboard/teams/view-members")}
                     className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
                   >
-                    Roles & Permissions
+                    View Members
+                  </button>
+                  <button
+                    onClick={() => handleNavigation("/dashboard/teams/restrict-access")}
+                    className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Restrict Access
                   </button>
                 </div>
               )}
