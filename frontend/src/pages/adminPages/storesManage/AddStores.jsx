@@ -18,6 +18,7 @@ import axios from "axios";
 import NavBar from "../../../components/NavBar";
 import { generatePassword } from "../../../lib/generatePassword";
 import { AppContent } from "../../../context/AppContext";
+import { toast } from "react-toastify";
 
 const AddStores = () => {
   // STORE FORM
@@ -77,20 +78,12 @@ const AddStores = () => {
   const copyPassword = async () => {
     try {
       await navigator.clipboard.writeText(password);
-
       setCopied(true);
-
-      setAlertMessage("Password copied to clipboard");
-      setAlertVisible(true);
-
       setTimeout(() => {
         setCopied(false);
       }, 1500);
     } catch (error) {
       console.error("Copy password error:", error);
-
-      setAlertMessage("Unable to copy password");
-      setAlertVisible(true);
     }
   };
 
@@ -105,8 +98,7 @@ const AddStores = () => {
       !email ||
       !password
     ) {
-      setAlertMessage("Please fill all fields");
-      setAlertVisible(true);
+      toast.error("Please fill all fields");
       return;
     }
 
@@ -192,7 +184,7 @@ const AddStores = () => {
 
                 <div>
                   <h2 className="text-xl font-bold text-gray-800">
-                    Store Details
+                    Add Store
                   </h2>
 
                   <p className="text-sm text-gray-500">
@@ -352,10 +344,6 @@ const AddStores = () => {
                   </button>
                 </div>
 
-                <p className="mt-2 text-xs text-gray-500">
-                  Click the password to copy it or use the refresh icon
-                  to generate a new one.
-                </p>
               </div>
             </div>
 

@@ -12,8 +12,10 @@ import {
 import axios from "axios";
 import NavBar from "../../../components/NavBar";
 import { AppContent } from "../../../context/AppContext";
+import { useNavigate } from "react-router-dom";
 
 const ViewAllStores = () => {
+  const navigate = useNavigate();
   const { backendUrl } = useContext(AppContent);
 
   const [alertVisible, setAlertVisible] = useState(false);
@@ -40,13 +42,11 @@ const ViewAllStores = () => {
 
     try {
       const { data } = await axios.get(
-        `${backendUrl}/auth/admin/get-all-stores?page=${page}&limit=${LIMIT}`
+        `${backendUrl}/auth/admin/get-all-stores?page=${page}&limit=${LIMIT}`,
       );
 
       if (data.success) {
-        const newStores = Array.isArray(data.stores)
-          ? data.stores
-          : [];
+        const newStores = Array.isArray(data.stores) ? data.stores : [];
 
         setStores((prev) => [...prev, ...newStores]);
 
@@ -99,18 +99,9 @@ const ViewAllStores = () => {
   };
 
   const handleStoreClick = (store) => {
-    console.log("Selected Store:", store.storeId);
-
-    // Connect your React Router navigation here.
-    //
-    // Example:
-    //
-    // navigate("/all-transactions", {
-    //   state: {
-    //     storeId: store.storeId,
-    //   },
-    // });
+    navigate(`/dashboard/stores/${store.storeId}`);
   };
+
 
   return (
     <div className="min-h-screen w-full bg-gray-50 text-gray-800">
@@ -121,16 +112,11 @@ const ViewAllStores = () => {
         <div className="mb-4">
           <div className="flex items-center gap-3">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-50">
-              <MdStore
-                size={28}
-                className="text-blue-600"
-              />
+              <MdStore size={28} className="text-blue-600" />
             </div>
 
             <div>
-              <h1 className="text-xl font-bold text-gray-800">
-                All Stores
-              </h1>
+              <h1 className="text-xl font-bold text-gray-800">All Stores</h1>
 
               <p className="text-sm text-gray-500">
                 View and manage all registered stores
@@ -144,29 +130,19 @@ const ViewAllStores = () => {
           {/* TOTAL COUNT */}
           <div className="flex items-center gap-4 rounded-2xl bg-indigo-100 p-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white">
-              <MdStore
-                size={28}
-                className="text-blue-600"
-              />
+              <MdStore size={28} className="text-blue-600" />
             </div>
 
             <div>
-              <p className="text-sm font-medium text-gray-700">
-                Total Stores
-              </p>
+              <p className="text-sm font-medium text-gray-700">Total Stores</p>
 
-              <p className="text-2xl font-black text-blue-600">
-                {count}
-              </p>
+              <p className="text-2xl font-black text-blue-600">{count}</p>
             </div>
           </div>
 
           {/* SEARCH */}
           <div className="flex h-full min-h-[80px] items-center rounded-2xl bg-indigo-50 px-4">
-            <MdSearch
-              size={23}
-              className="shrink-0 text-blue-600"
-            />
+            <MdSearch size={23} className="shrink-0 text-blue-600" />
 
             <input
               type="text"
@@ -195,10 +171,7 @@ const ViewAllStores = () => {
         ) : filteredStores.length === 0 ? (
           <div className="flex min-h-[400px] flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
             <div className="mb-3 flex h-24 w-24 items-center justify-center rounded-full bg-gray-100">
-              <MdStore
-                size={60}
-                className="text-gray-500"
-              />
+              <MdStore size={60} className="text-gray-500" />
             </div>
 
             <p className="text-center text-xl font-medium text-gray-500">
@@ -216,11 +189,7 @@ const ViewAllStores = () => {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {filteredStores.map((store, index) => (
                 <StoreCard
-                  key={
-                    store.storeId
-                      ? `${store.storeId}-${index}`
-                      : index
-                  }
+                  key={store.storeId ? `${store.storeId}-${index}` : index}
                   store={store}
                   onClick={() => handleStoreClick(store)}
                 />
@@ -235,9 +204,7 @@ const ViewAllStores = () => {
                   onClick={handleLoadMore}
                   disabled={loading}
                   className={`flex h-10 min-w-32 cursor-pointer items-center justify-center rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 ${
-                    loading
-                      ? "cursor-not-allowed opacity-50"
-                      : ""
+                    loading ? "cursor-not-allowed opacity-50" : ""
                   }`}
                 >
                   {loading ? (
@@ -260,9 +227,7 @@ const ViewAllStores = () => {
             {search && (
               <p className="mt-3 text-center text-xs text-gray-400">
                 Showing {filteredStores.length} matching
-                {filteredStores.length === 1
-                  ? " store"
-                  : " stores"}
+                {filteredStores.length === 1 ? " store" : " stores"}
               </p>
             )}
           </>
@@ -309,10 +274,7 @@ const StoreCard = ({ store, onClick }) => {
         <div className="flex min-w-0 items-center gap-3">
           {/* STORE ICON */}
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-50">
-            <MdStore
-              size={23}
-              className="text-blue-600"
-            />
+            <MdStore size={23} className="text-blue-600" />
           </div>
 
           {/* STORE NAME + ID */}
@@ -322,10 +284,7 @@ const StoreCard = ({ store, onClick }) => {
             </p>
 
             <div className="mt-0.5 flex items-center gap-1">
-              <MdConfirmationNumber
-                size={15}
-                className="text-blue-600"
-              />
+              <MdConfirmationNumber size={15} className="text-blue-600" />
 
               <p className="truncate text-xs font-medium text-gray-500">
                 {store.storeId || "N/A"}
@@ -346,7 +305,8 @@ const StoreCard = ({ store, onClick }) => {
       {/* 
           STORE DETAILS
        */}
-      <div className="space-y-2.5">
+      <div
+        className="space-y-2.5">
         {/* LOCATION */}
         <StoreInfoRow
           icon={<MdLocationOn />}
@@ -354,16 +314,10 @@ const StoreCard = ({ store, onClick }) => {
         />
 
         {/* PHONE */}
-        <StoreInfoRow
-          icon={<MdPhone />}
-          value={store.contactNumber || "N/A"}
-        />
+        <StoreInfoRow icon={<MdPhone />} value={store.contactNumber || "N/A"} />
 
         {/* EMAIL */}
-        <StoreInfoRow
-          icon={<MdEmail />}
-          value={store.email || "N/A"}
-        />
+        <StoreInfoRow icon={<MdEmail />} value={store.email || "N/A"} />
       </div>
     </button>
   );
