@@ -22,14 +22,14 @@ import StoreTransactions from "./pages/vendorPages/StoreTransactions";
 import AdminDashboard from "./pages/adminPages/AdminDashboard";
 import AdminStoreTransactions from "./pages/adminPages/AdminStoreTransactions";
 import AddStores from "./pages/adminPages/storesManage/AddStores";
-import EditStores from "./pages/adminPages/storesManage/EditStores";
 import ViewStores from "./pages/adminPages/storesManage/ViewStores";
 import AddManagers from "./pages/adminPages/managersManage/AddManagers";
 import ViewManagers from "./pages/adminPages/managersManage/ViewManagers";
-import EditManagers from "./pages/adminPages/managersManage/EditManagers";
 import AddVendors from "./pages/adminPages/vendorsManage/AddVendors";
 import EditVendors from "./pages/adminPages/vendorsManage/EditVendors";
 import ViewVendors from "./pages/adminPages/vendorsManage/ViewVendors";
+import RemoveStores from "./pages/adminPages/storesManage/RemoveStores";
+import RemoveManagers from "./pages/adminPages/managersManage/RemoveManagers";
 
 const App = () => {
   const { isLoggedin, userRole } = useContext(AppContent);
@@ -91,16 +91,16 @@ const App = () => {
               element={<AddStores />}
             />
 
-            {/* /dashboard/stores/edit-stores */}
-            <Route
-              path="edit-stores"
-              element={<EditStores />}
-            />
 
             {/* /dashboard/stores/view-stores */}
             <Route
               path="view-stores"
               element={<ViewStores />}
+            />
+            {/* /dashboard/stores/remove-stores */}
+            <Route
+              path="remove-stores"
+              element={<RemoveStores />}
             />
           </Route>
           <Route path="/dashboard/managers">
@@ -113,16 +113,17 @@ const App = () => {
               element={<AddManagers />}
             />
 
-            {/* /dashboard/managers/edit-managers */}
-            <Route
-              path="edit-managers"
-              element={<EditManagers />}
-            />
 
             {/* /dashboard/managers/view-managers */}
             <Route
               path="view-managers"
               element={<ViewManagers />}
+            />
+
+            {/* /dashboard/managers/remove-managers */}
+            <Route
+              path="remove-managers"
+              element={<RemoveManagers />}
             />
           </Route>
           <Route path="/dashboard/vendors">
@@ -159,64 +160,3 @@ const App = () => {
 };
 
 export default App;
-
-
-
-
-// import React, { useContext } from "react";
-// import { Routes, Route } from "react-router-dom";
-// import ResetPassword from "./pages/ResetPassword";
-// import { ToastContainer } from "react-toastify";
-// import "react-toastify/dist/ReactToastify.css";
-
-// // Pages
-// import Login from "./pages/Login";
-// import Home from "./pages/Home";
-// import Transactions from "./pages/Transactions";
-// import Profile from "./pages/Profile";
-// import NotFound from "./pages/NotFound";
-// import { AppContent } from "./context/AppContext";
-// import VendorDashboard from "./pages/vendorPages/VendorDashboard";
-// import StoreTransactions from "./pages/vendorPages/StoreTransactions";
-// import AdminDashboard from "./pages/adminPages/AdminDashboard";
-// import AdminStoreTransactions from "./pages/adminPages/AdminStoreTransactions";
-
-// const App = () => {
-  
-//   const { isLoggedin, userRole } = useContext(AppContent);
-  
-//   return (
-//     <div>
-//       <ToastContainer />
-//       <Routes>
-//         <Route path="/" element={<Home />} />
-//         <Route path="/login" element={<Login />} />
-//         <Route path="/reset-password" element={<ResetPassword />} />
-//         {isLoggedin && (
-//           <>
-//           <Route path="/profile" element={<Profile />} />
-//           <Route
-//             path="/dashboard/stores/:storeId/:id"
-//             element={<Transactions />}
-//           />
-//           </>
-//         )}
-//         {isLoggedin && userRole === 'vendor' && (
-//           <>
-//             <Route path="/dashboard/stores" element={<VendorDashboard />} />
-//             <Route path="/dashboard/stores/:storeId" element={<StoreTransactions />} />
-//           </>
-//         )}
-//         {isLoggedin && userRole === 'admin' && (
-//           <>
-//            <Route path="/dashboard/stores" element={<AdminDashboard />} />
-//            <Route path="/dashboard/stores/:storeId" element={<AdminStoreTransactions />} />
-//           </>
-//         )}
-//         <Route path="*" element={<NotFound />} />
-//       </Routes>
-//     </div>
-//   );
-// };
-
-// export default App;
