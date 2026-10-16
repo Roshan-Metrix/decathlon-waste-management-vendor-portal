@@ -9,7 +9,7 @@ import {
   LogOut,
   ChevronDown,
 } from "lucide-react";
-import SideBar from "./Sidebar";
+import SideBar from "./SideBar";
 
 const NavBar = () => {
   const navigate = useNavigate();

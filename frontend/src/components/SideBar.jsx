@@ -1,14 +1,9 @@
 import React, { useState } from "react";
 import {
   Menu,
-  X,
   LayoutDashboard,
   Store,
-  Trash2,
-  BarChart3,
   Users,
-  Settings,
-  HelpCircle,
   User,
   ChevronDown,
   Warehouse,
