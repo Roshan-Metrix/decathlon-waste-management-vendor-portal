@@ -20,18 +20,27 @@ import { AppContent } from "../../../context/AppContext";
 
 // Standard Decathlon material categories for quick suggestions
 const OFFICIAL_MATERIAL_SUGGESTIONS = [
-  "Carton / Cardboard",
-  "Clear Film (LDPE)",
-  "Coloured Film",
-  "Mixed Plastic",
-  "Rigid Plastic (PP/HDPE)",
-  "Wood / Pallets",
-  "Metal / Iron",
-  "Organic / Food Waste",
-  "General Non-Recyclable",
-  "Paper / Office Waste",
-  "Textile Waste",
-  "E-Waste / Electrical",
+  "Defective Products",
+  "Recycling Hard Plastic",
+  "Hazardous Waste",
+  "Recycling Batteries",
+  "Recycling Paper/cardboard",
+  "Recycling E Waste",
+  "Recycling Glass",
+  "Recycling Hard Plastic",
+  "Recycling Hard Plastic",
+  "Recycling Metal",
+  "Recycling Mixed Packaging",
+  "Recycling Organic",
+  "Recycling Paper/cardboard",
+  "Recycling Rubber",
+  "Recycling Soft Plastics",
+  "Recycling Textile",
+  "Recycling Wood",
+  "Waste incineration",
+  "Waste incineration energy recovery",
+  "Waste landfill",
+  "Recycling Lighting Products",
 ];
 
 const AddMaterialMapping = () => {
@@ -43,13 +52,13 @@ const AddMaterialMapping = () => {
   const [regions, setRegions] = useState([]);
   const [regionsLoading, setRegionsLoading] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState(
-    location.state?.region || ""
+    location.state?.region || "",
   );
 
   const [vendors, setVendors] = useState([]);
   const [vendorsLoading, setVendorsLoading] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState(
-    location.state?.vendorId || ""
+    location.state?.vendorId || "",
   );
 
   // Mapping rows state
@@ -76,7 +85,7 @@ const AddMaterialMapping = () => {
     if (!alert.visible) return;
     const timer = setTimeout(
       () => setAlert((current) => ({ ...current, visible: false })),
-      4000
+      4000,
     );
     return () => clearTimeout(timer);
   }, [alert]);
@@ -105,7 +114,7 @@ const AddMaterialMapping = () => {
       setVendorsLoading(true);
       const { data } = await axios.get(
         `${backendUrl}/vendor/get-all-vendors?limit=100`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       if (data?.success && Array.isArray(data.vendors)) {
         setVendors(data.vendors);
@@ -131,7 +140,7 @@ const AddMaterialMapping = () => {
         // 1. Check if mapping already exists
         const mappingRes = await axios.get(
           `${backendUrl}/auth/get-material-mapping/${region.trim()}/${vendorId}`,
-          { withCredentials: true }
+          { withCredentials: true },
         );
 
         if (
@@ -143,7 +152,7 @@ const AddMaterialMapping = () => {
             mappingRes.data.data.materials.map((m) => ({
               materialType: m.materialType || "",
               officialMaterialType: m.officialMaterialType || "",
-            }))
+            })),
           );
           setIsExistingMapping(true);
           showAlert("Existing material mapping loaded for editing.", "info");
@@ -157,7 +166,7 @@ const AddMaterialMapping = () => {
         try {
           const regionalRes = await axios.get(
             `${backendUrl}/auth/get-regional-materials/${region.trim()}/${vendorId}`,
-            { withCredentials: true }
+            { withCredentials: true },
           );
 
           if (
@@ -177,7 +186,7 @@ const AddMaterialMapping = () => {
             setMappings(autoFilled);
             showAlert(
               `Auto-populated ${autoFilled.length} materials from regional configuration.`,
-              "info"
+              "info",
             );
             setCheckingExisting(false);
             return;
@@ -195,7 +204,7 @@ const AddMaterialMapping = () => {
         setCheckingExisting(false);
       }
     },
-    [backendUrl]
+    [backendUrl],
   );
 
   useEffect(() => {
@@ -278,7 +287,7 @@ const AddMaterialMapping = () => {
       if (!item.materialType || !item.officialMaterialType) {
         showAlert(
           `Row #${i + 1} is incomplete. Both Store Material and Official Material names are required.`,
-          "error"
+          "error",
         );
         return;
       }
@@ -290,7 +299,7 @@ const AddMaterialMapping = () => {
     if (uniqueTypes.size !== types.length) {
       showAlert(
         "Duplicate Store Material names found. Each store material must be unique.",
-        "error"
+        "error",
       );
       return;
     }
@@ -305,24 +314,27 @@ const AddMaterialMapping = () => {
       const res = await axios.post(
         `${backendUrl}/auth/add-material-mapping/${selectedRegion.trim()}/${selectedVendor}`,
         payload,
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (res.data?.success) {
         showAlert(
           res.data.message || "Material mappings saved successfully!",
-          "success"
+          "success",
         );
         setIsExistingMapping(true);
       } else {
-        showAlert(res.data?.message || "Failed to save material mappings.", "error");
+        showAlert(
+          res.data?.message || "Failed to save material mappings.",
+          "error",
+        );
       }
     } catch (err) {
       console.error("Save Mapping Error:", err);
       showAlert(
         err.response?.data?.message ||
           "Failed to save material mappings. Please check if material rates are configured for this Region and Vendor.",
-        "error"
+        "error",
       );
     } finally {
       setSubmitting(false);
@@ -341,8 +353,8 @@ const AddMaterialMapping = () => {
               alert.type === "success"
                 ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
                 : alert.type === "error"
-                ? "bg-rose-50 text-rose-800 border border-rose-200"
-                : "bg-blue-50 text-blue-800 border border-blue-200"
+                  ? "bg-rose-50 text-rose-800 border border-rose-200"
+                  : "bg-blue-50 text-blue-800 border border-blue-200"
             }`}
           >
             <div className="flex items-center gap-2">
@@ -484,8 +496,8 @@ const AddMaterialMapping = () => {
                 2. Configure Material Mapping Pairs
               </h2>
               <p className="text-xs text-gray-500">
-                Specify each store material type and assign its Decathlon official
-                waste category
+                Specify each store material type and assign its Decathlon
+                official waste category
               </p>
             </div>
 
@@ -577,7 +589,7 @@ const AddMaterialMapping = () => {
                           handleUpdateRow(
                             index,
                             "officialMaterialType",
-                            e.target.value
+                            e.target.value,
                           )
                         }
                         placeholder="e.g. Carton / Cardboard, Mixed Plastic"
@@ -619,8 +631,8 @@ const AddMaterialMapping = () => {
                 {submitting
                   ? "Saving Mappings..."
                   : isExistingMapping
-                  ? "Update Material Mappings"
-                  : "Save Material Mappings"}
+                    ? "Update Material Mappings"
+                    : "Save Material Mappings"}
               </span>
             </button>
           </div>
