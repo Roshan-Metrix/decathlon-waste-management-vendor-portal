@@ -462,19 +462,22 @@ const AdminDashboard = () => {
         toast.info("No transaction invoice records found for the selected period.");
       }
 
-      // Safe CSV cell escaper
-      const escapeCsv = (val) => {
+      // Safe CSV cell escaper (preserves leading zeros in Excel for Store Code and numeric codes)
+      const escapeCsv = (val, col) => {
         if (val === null || val === undefined) return '""';
         const str = String(val);
+        if (col === "Store Code" || (typeof val === "string" && /^0\d+$/.test(str))) {
+          return `="""${str}"""`;
+        }
         return `"${str.replace(/"/g, '""')}"`;
       };
 
       // Header row using the 55 exact columns
-      const csvHeader = INVOICE_CSV_COLUMNS.map(escapeCsv).join(",");
+      const csvHeader = INVOICE_CSV_COLUMNS.map((col) => `"${col}"`).join(",");
 
       // Data rows mapped to the exact 55 columns
       const csvLines = rowsData.map((row) =>
-        INVOICE_CSV_COLUMNS.map((col) => escapeCsv(row[col])).join(",")
+        INVOICE_CSV_COLUMNS.map((col) => escapeCsv(row[col], col)).join(",")
       );
 
       // Prepend UTF-8 BOM (\uFEFF) for perfect Excel encoding
