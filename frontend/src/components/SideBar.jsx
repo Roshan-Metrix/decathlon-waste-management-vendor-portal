@@ -7,6 +7,7 @@ import {
   User,
   ChevronDown,
   Warehouse,
+  Cable,
 } from "lucide-react";
 import { assets } from "../assets/assets";
 import { useNavigate } from "react-router-dom";
@@ -48,9 +49,8 @@ export default function SideBar() {
 
       {/* SLIDING SIDEBAR */}
       <aside
-        className={`fixed top-0 left-0 bottom-0 w-72 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col justify-between ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed top-0 left-0 bottom-0 w-72 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col justify-between ${isOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         {/* Top Header & Navigation Links */}
         <div className="p-4 space-y-6 overflow-y-auto max-h-[calc(100vh-80px)]">
@@ -85,22 +85,20 @@ export default function SideBar() {
             <div>
               <button
                 onClick={() => toggleSubmenu("stores")}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-colors cursor-pointer ${
-                  openSubmenu === "stores"
-                    ? "bg-slate-100 text-blue-700 font-semibold"
-                    : "text-slate-600 hover:bg-slate-50"
-                }`}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-colors cursor-pointer ${openSubmenu === "stores"
+                  ? "bg-slate-100 text-blue-700 font-semibold"
+                  : "text-slate-600 hover:bg-slate-50"
+                  }`}
               >
                 <div className="flex items-center gap-3">
                   <Store className="w-5 h-5 text-slate-400" />
                   Store Management
                 </div>
                 <ChevronDown
-                  className={`w-4 h-4 transition-transform duration-200 ${
-                    openSubmenu === "stores"
-                      ? "rotate-180 text-blue-600"
-                      : "text-slate-400"
-                  }`}
+                  className={`w-4 h-4 transition-transform duration-200 ${openSubmenu === "stores"
+                    ? "rotate-180 text-blue-600"
+                    : "text-slate-400"
+                    }`}
                 />
               </button>
 
@@ -139,22 +137,20 @@ export default function SideBar() {
             <div>
               <button
                 onClick={() => toggleSubmenu("managers")}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-colors cursor-pointer ${
-                  openSubmenu === "managers"
-                    ? "bg-slate-100 text-blue-700 font-semibold"
-                    : "text-slate-600 hover:bg-slate-50"
-                }`}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-colors cursor-pointer ${openSubmenu === "managers"
+                  ? "bg-slate-100 text-blue-700 font-semibold"
+                  : "text-slate-600 hover:bg-slate-50"
+                  }`}
               >
                 <div className="flex items-center gap-3">
                   <Users className="w-5 h-5 text-slate-400" />
                   Manager Management
                 </div>
                 <ChevronDown
-                  className={`w-4 h-4 transition-transform duration-200 ${
-                    openSubmenu === "managers"
-                      ? "rotate-180 text-blue-600"
-                      : "text-slate-400"
-                  }`}
+                  className={`w-4 h-4 transition-transform duration-200 ${openSubmenu === "managers"
+                    ? "rotate-180 text-blue-600"
+                    : "text-slate-400"
+                    }`}
                 />
               </button>
 
@@ -193,22 +189,20 @@ export default function SideBar() {
             <div>
               <button
                 onClick={() => toggleSubmenu("vendors")}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-colors cursor-pointer ${
-                  openSubmenu === "vendors"
-                    ? "bg-slate-100 text-blue-700 font-semibold"
-                    : "text-slate-600 hover:bg-slate-50"
-                }`}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-colors cursor-pointer ${openSubmenu === "vendors"
+                  ? "bg-slate-100 text-blue-700 font-semibold"
+                  : "text-slate-600 hover:bg-slate-50"
+                  }`}
               >
                 <div className="flex items-center gap-3">
                   <Warehouse className="w-5 h-5 text-slate-400" />
                   Vendor Management
                 </div>
                 <ChevronDown
-                  className={`w-4 h-4 transition-transform duration-200 ${
-                    openSubmenu === "vendors"
-                      ? "rotate-180 text-blue-600"
-                      : "text-slate-400"
-                  }`}
+                  className={`w-4 h-4 transition-transform duration-200 ${openSubmenu === "vendors"
+                    ? "rotate-180 text-blue-600"
+                    : "text-slate-400"
+                    }`}
                 />
               </button>
 
@@ -243,104 +237,76 @@ export default function SideBar() {
               )}
             </div>
 
-            {/* Waste Tracking Accordion */}
-            {/* <div>
+            {/* Material Mapping Management */}
+            <div>
               <button
-                onClick={() => toggleSubmenu("waste")}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-colors cursor-pointer ${
-                  openSubmenu === "waste"
-                    ? "bg-slate-100 text-blue-700 font-semibold"
-                    : "text-slate-600 hover:bg-slate-50"
-                }`}
+                onClick={() => toggleSubmenu("materials")}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-colors cursor-pointer ${openSubmenu === "materials"
+                  ? "bg-slate-100 text-blue-700 font-semibold"
+                  : "text-slate-600 hover:bg-slate-50"
+                  }`}
               >
                 <div className="flex items-center gap-3">
-                  <Trash2 className="w-5 h-5 text-slate-400" />
-                  Waste Tracking
+                  <Cable className="w-5 h-5 text-slate-400" />
+                  Material Mappings
                 </div>
                 <ChevronDown
-                  className={`w-4 h-4 transition-transform duration-200 ${
-                    openSubmenu === "waste" ? "rotate-180 text-blue-600" : "text-slate-400"
-                  }`}
+                  className={`w-4 h-4 transition-transform duration-200 ${openSubmenu === "materials"
+                    ? "rotate-180 text-blue-600"
+                    : "text-slate-400"
+                    }`}
                 />
               </button>
 
-              {openSubmenu === "waste" && (
+              {/* Submenu Links */}
+              {openSubmenu === "materials" && (
                 <div className="mt-1 ml-9 pl-3 border-l-2 border-slate-100 space-y-1">
                   <button
-                    onClick={() => handleNavigation("/waste/log")}
+                    onClick={() =>
+                      handleNavigation("/dashboard/admin/add-material-mappings")
+                    }
                     className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
                   >
-                    Log Waste
+                    Add Material Mapping
                   </button>
                   <button
-                    onClick={() => handleNavigation("/waste/reports")}
+                    onClick={() =>
+                      handleNavigation("/dashboard/admin/view-material-mappings")
+                    }
                     className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
                   >
-                    Waste Reports
+                    View Material Mappings
+                  </button>
+                  <button
+                    onClick={() =>
+                      handleNavigation("/dashboard/admin/remove-material-mappings")
+                    }
+                    className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Remove Material Mappings
                   </button>
                 </div>
               )}
-            </div> */}
-
-            {/* Analytics Accordion */}
-            {/* <div>
-              <button
-                onClick={() => toggleSubmenu("analytics")}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-colors cursor-pointer ${
-                  openSubmenu === "analytics"
-                    ? "bg-slate-100 text-blue-700 font-semibold"
-                    : "text-slate-600 hover:bg-slate-50"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <BarChart3 className="w-5 h-5 text-slate-400" />
-                  Analytics
-                </div>
-                <ChevronDown
-                  className={`w-4 h-4 transition-transform duration-200 ${
-                    openSubmenu === "analytics" ? "rotate-180 text-blue-600" : "text-slate-400"
-                  }`}
-                />
-              </button>
-
-              {openSubmenu === "analytics" && (
-                <div className="mt-1 ml-9 pl-3 border-l-2 border-slate-100 space-y-1">
-                  <button
-                    onClick={() => handleNavigation("/analytics/overview")}
-                    className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
-                  >
-                    Overview
-                  </button>
-                  <button
-                    onClick={() => handleNavigation("/analytics/reports")}
-                    className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
-                  >
-                    Transaction Insights
-                  </button>
-                </div>
-              )}
-            </div> */}
+            </div>
 
             {/* Team Accordion */}
             <div>
               <button
                 onClick={() => toggleSubmenu("team")}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-colors cursor-pointer ${
-                  openSubmenu === "team"
-                    ? "bg-slate-100 text-blue-700 font-semibold"
-                    : "text-slate-600 hover:bg-slate-50"
-                }`}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-colors cursor-pointer ${openSubmenu === "team"
+                  ? "bg-slate-100 text-blue-700 font-semibold"
+                  : "text-slate-600 hover:bg-slate-50"
+                  }`}
               >
                 <div className="flex items-center gap-3">
                   <Users className="w-5 h-5 text-slate-400" />
                   Team
                 </div>
                 <ChevronDown
-                  className={`w-4 h-4 transition-transform duration-200 ${
-                    openSubmenu === "team"
-                      ? "rotate-180 text-blue-600"
-                      : "text-slate-400"
-                  }`}
+                  className={`w-4 h-4 transition-transform duration-200 ${openSubmenu === "team"
+                    ? "rotate-180 text-blue-600"
+                    : "text-slate-400"
+                    }`}
                 />
               </button>
 
