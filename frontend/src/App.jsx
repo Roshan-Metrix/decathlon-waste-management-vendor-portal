@@ -33,6 +33,9 @@ import RemoveVendors from "./pages/adminPages/vendorsManage/RemoveVendors";
 import ViewAdmins from "./pages/adminPages/manageAdmins/ViewAdmins";
 import AddAdmins from "./pages/adminPages/manageAdmins/AddAdmins";
 import RestrictAccess from "./pages/adminPages/manageAdmins/RestrictAccess";
+import AddMaterialMapping from "./pages/adminPages/materialMapping/AddMaterialMapping";
+import ViewMaterialMapping from "./pages/adminPages/materialMapping/ViewMaterialMapping";
+import RemoveMaterialMapping from "./pages/adminPages/materialMapping/RemoveMaterialMapping";
 
 const App = () => {
   const { isLoggedin, userRole } = useContext(AppContent);
@@ -78,102 +81,146 @@ const App = () => {
 
         {isLoggedin && userRole === "admin" && (
           <>
-          <Route path="/dashboard/stores">
-            {/* /dashboard/stores */}
-            <Route index element={<AdminDashboard />} />
+            <Route path="/dashboard/stores">
+              {/* /dashboard/stores */}
+              <Route index element={<AdminDashboard />} />
 
-            {/* /dashboard/stores/:storeId */}
-            <Route
-              path=":storeId"
-              element={<AdminStoreTransactions />}
-            />
+              {/* /dashboard/stores/:storeId */}
+              <Route
+                path=":storeId"
+                element={<AdminStoreTransactions />}
+              />
 
-            {/* /dashboard/stores/add-stores */}
-            <Route
-              path="add-stores"
-              element={<AddStores />}
-            />
-
-
-            {/* /dashboard/stores/view-stores */}
-            <Route
-              path="view-stores"
-              element={<ViewStores />}
-            />
-            {/* /dashboard/stores/remove-stores */}
-            <Route
-              path="remove-stores"
-              element={<RemoveStores />}
-            />
-          </Route>
-          <Route path="/dashboard/managers">
-            {/* /dashboard/stores */}
-            <Route index element={<AdminDashboard />} />
-
-            {/* /dashboard/managers/add-managers */}
-            <Route
-              path="add-managers"
-              element={<AddManagers />}
-            />
+              {/* /dashboard/stores/add-stores */}
+              <Route
+                path="add-stores"
+                element={<AddStores />}
+              />
 
 
-            {/* /dashboard/managers/view-managers */}
-            <Route
-              path="view-managers"
-              element={<ViewManagers />}
-            />
+              {/* /dashboard/stores/view-stores */}
+              <Route
+                path="view-stores"
+                element={<ViewStores />}
+              />
+              {/* /dashboard/stores/remove-stores */}
+              <Route
+                path="remove-stores"
+                element={<RemoveStores />}
+              />
+            </Route>
+            <Route path="/dashboard/managers">
+              {/* /dashboard/stores */}
+              <Route index element={<AdminDashboard />} />
 
-            {/* /dashboard/managers/remove-managers */}
-            <Route
-              path="remove-managers"
-              element={<RemoveManagers />}
-            />
-          </Route>
-          <Route path="/dashboard/vendors">
-            {/* /dashboard/stores */}
-            <Route index element={<AdminDashboard />} />
+              {/* /dashboard/managers/add-managers */}
+              <Route
+                path="add-managers"
+                element={<AddManagers />}
+              />
 
-            {/* /dashboard/vendors/add-vendors */}
-            <Route
-              path="add-vendors"
-              element={<AddVendors />}
-            />
 
-            {/* /dashboard/vendors/remove-vendors */}
-            <Route
-              path="remove-vendors"
-              element={<RemoveVendors />}
-            />
+              {/* /dashboard/managers/view-managers */}
+              <Route
+                path="view-managers"
+                element={<ViewManagers />}
+              />
 
-            {/* /dashboard/vendors/view-vendors */}
-            <Route
-              path="view-vendors"
-              element={<ViewVendors />}
-            />
-          </Route>
-          <Route path="/dashboard/teams">
-            {/* /dashboard/stores */}
-            <Route index element={<AdminDashboard />} />
+              {/* /dashboard/managers/remove-managers */}
+              <Route
+                path="remove-managers"
+                element={<RemoveManagers />}
+              />
+            </Route>
+            <Route path="/dashboard/vendors">
+              {/* /dashboard/stores */}
+              <Route index element={<AdminDashboard />} />
 
-            {/* /dashboard/vendors/add-vendors */}
-            <Route
-              path="add-members"
-              element={<AddAdmins />}
-            />
+              {/* /dashboard/vendors/add-vendors */}
+              <Route
+                path="add-vendors"
+                element={<AddVendors />}
+              />
 
-            {/* /dashboard/vendors/remove-vendors */}
-            <Route
-              path="view-members"
-              element={<ViewAdmins />}
-            />
+              {/* /dashboard/vendors/remove-vendors */}
+              <Route
+                path="remove-vendors"
+                element={<RemoveVendors />}
+              />
 
-            {/* /dashboard/vendors/view-vendors */}
-            <Route
-              path="restrict-access"
-              element={<RestrictAccess />}
-            />
-          </Route>
-         </>
+              {/* /dashboard/vendors/view-vendors */}
+              <Route
+                path="view-vendors"
+                element={<ViewVendors />}
+              />
+            </Route>
+            <Route path="/dashboard/teams">
+              {/* /dashboard/stores */}
+              <Route index element={<AdminDashboard />} />
+
+              {/* /dashboard/vendors/add-vendors */}
+              <Route
+                path="add-members"
+                element={<AddAdmins />}
+              />
+
+              {/* /dashboard/vendors/remove-vendors */}
+              <Route
+                path="view-members"
+                element={<ViewAdmins />}
+              />
+
+              {/* /dashboard/vendors/view-vendors */}
+              <Route
+                path="restrict-access"
+                element={<RestrictAccess />}
+              />
+            </Route>
+            <Route path="/dashboard/mappings">
+              <Route index element={<ViewMaterialMapping />} />
+              <Route
+                path="add-mapping"
+                element={<AddMaterialMapping />}
+              />
+              <Route
+                path="view-mapping"
+                element={<ViewMaterialMapping />}
+              />
+              <Route
+                path="remove-mapping"
+                element={<RemoveMaterialMapping />}
+              />
+            </Route>
+            <Route path="/dashboard/material-mapping">
+              <Route index element={<ViewMaterialMapping />} />
+              <Route
+                path="add-material-mappings"
+                element={<AddMaterialMapping />}
+              />
+              <Route
+                path="view-material-mappings"
+                element={<ViewMaterialMapping />}
+              />
+              <Route
+                path="remove-material-mappings"
+                element={<RemoveMaterialMapping />}
+              />
+            </Route>
+            <Route path="/dashboard/admin">
+              <Route
+                path="add-material-mappings"
+                element={<AddMaterialMapping />}
+              />
+              <Route
+                path="view-material-mappings"
+                element={<ViewMaterialMapping />}
+              />
+              <Route
+                path="remove-material-mappings"
+                element={<RemoveMaterialMapping />}
+              />
+            </Route>
+          </>
         )}
 
         {/* 404 */}
