@@ -36,6 +36,10 @@ import RestrictAccess from "./pages/adminPages/manageAdmins/RestrictAccess";
 import AddMaterialMapping from "./pages/adminPages/materialMapping/AddMaterialMapping";
 import ViewMaterialMapping from "./pages/adminPages/materialMapping/ViewMaterialMapping";
 import RemoveMaterialMapping from "./pages/adminPages/materialMapping/RemoveMaterialMapping";
+import AddRegions from "./pages/adminPages/manageRegions/AddRegions";
+import ViewRegions from "./pages/adminPages/manageRegions/ViewRegions";
+import EditMaterialsRate from "./pages/adminPages/manageRegions/EditMaterialsRate";
+import RemoveRegions from "./pages/adminPages/manageRegions/RemoveRegions";
 
 const App = () => {
   const { isLoggedin, userRole } = useContext(AppContent);
@@ -175,6 +179,26 @@ const App = () => {
                 path="restrict-access"
                 element={<RestrictAccess />}
               />
+            </Route>
+            <Route path="/dashboard/regions">
+              <Route index element={<ViewRegions />} />
+              <Route path="add-regions" element={<AddRegions />} />
+              <Route path="add-region" element={<AddRegions />} />
+              <Route path="view-regions" element={<ViewRegions />} />
+              <Route path="view-region" element={<ViewRegions />} />
+              <Route path="edit-rates" element={<EditMaterialsRate />} />
+              <Route path="remove-regions" element={<RemoveRegions />} />
+              <Route path="remove-region" element={<RemoveRegions />} />
+            </Route>
+            <Route path="/dashboard/manage-regions">
+              <Route index element={<ViewRegions />} />
+              <Route path="add-regions" element={<AddRegions />} />
+              <Route path="add-region" element={<AddRegions />} />
+              <Route path="view-regions" element={<ViewRegions />} />
+              <Route path="view-region" element={<ViewRegions />} />
+              <Route path="edit-rates" element={<EditMaterialsRate />} />
+              <Route path="remove-regions" element={<RemoveRegions />} />
+              <Route path="remove-region" element={<RemoveRegions />} />
             </Route>
             <Route path="/dashboard/mappings">
               <Route index element={<ViewMaterialMapping />} />

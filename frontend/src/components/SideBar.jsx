@@ -8,6 +8,7 @@ import {
   ChevronDown,
   Warehouse,
   Cable,
+  MapPin,
 } from "lucide-react";
 import { assets } from "../assets/assets";
 import { useNavigate } from "react-router-dom";
@@ -232,6 +233,66 @@ export default function SideBar() {
                     className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
                   >
                     Remove Vendors
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Region Management Accordion */}
+            <div>
+              <button
+                onClick={() => toggleSubmenu("regions")}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-sm transition-colors cursor-pointer ${openSubmenu === "regions"
+                  ? "bg-slate-100 text-blue-700 font-semibold"
+                  : "text-slate-600 hover:bg-slate-50"
+                  }`}
+              >
+                <div className="flex items-center gap-3">
+                  <MapPin className="w-5 h-5 text-slate-400" />
+                  Region Management
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform duration-200 ${openSubmenu === "regions"
+                    ? "rotate-180 text-blue-600"
+                    : "text-slate-400"
+                    }`}
+                />
+              </button>
+
+              {/* Submenu Links */}
+              {openSubmenu === "regions" && (
+                <div className="mt-1 ml-9 pl-3 border-l-2 border-slate-100 space-y-1">
+                  <button
+                    onClick={() =>
+                      handleNavigation("/dashboard/regions/add-region")
+                    }
+                    className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Add Region
+                  </button>
+                  <button
+                    onClick={() =>
+                      handleNavigation("/dashboard/regions/view-regions")
+                    }
+                    className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
+                  >
+                    View Regions
+                  </button>
+                  <button
+                    onClick={() =>
+                      handleNavigation("/dashboard/regions/edit-rates")
+                    }
+                    className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Edit Material Rates
+                  </button>
+                  <button
+                    onClick={() =>
+                      handleNavigation("/dashboard/regions/remove-region")
+                    }
+                    className="block w-full text-left px-3 py-2 text-xs font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Remove Region
                   </button>
                 </div>
               )}
