@@ -82,6 +82,7 @@ const AdminStoreTransactions = () => {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [exportModalStatus, setExportModalStatus] = useState("ready");
   const [detailedExporting, setDetailedExporting] = useState(false);
+  const [csvExporting, setCsvExporting] = useState(false);
   const [summaryExporting, setSummaryExporting] = useState(false);
 
   // Helper to format Date to YYYY-MM-DD
@@ -94,8 +95,6 @@ const AdminStoreTransactions = () => {
 
   /* 
      FETCH STORE FINANCIAL SUMMARY (Total, Revenue, Net, Payable, Receivable)
-     Initial load: /transaction/transaction-store-summary?storeId=...
-     With dates:   /transaction/transaction-store-summary?storeId=...&from=...&to=...
   */
   const fetchStoreSummary = useCallback(
     async (from = "", to = "") => {
@@ -350,8 +349,8 @@ const AdminStoreTransactions = () => {
       doc.setFont("helvetica", "bold");
       doc.text(
         data.storeName?.toUpperCase() ||
-          storeName?.toUpperCase() ||
-          "STORE REPORT",
+        storeName?.toUpperCase() ||
+        "STORE REPORT",
         pageWidth / 2,
         cursorY,
         {
@@ -367,8 +366,8 @@ const AdminStoreTransactions = () => {
       doc.setFont("helvetica", "normal");
       doc.text(
         data.storeLocation ||
-          storeInfo.storeLocation ||
-          "",
+        storeInfo.storeLocation ||
+        "",
         pageWidth / 2,
         cursorY,
         {
@@ -454,6 +453,118 @@ const AdminStoreTransactions = () => {
   };
 
   /* 
+     EXPORT: DETAILED STORE REPORT CSV
+     Hits: /transaction/get-store-filter-transactions/:storeId/:fromDate/:toDate
+  */
+  const exportCSV = async () => {
+    try {
+      if (!fromDate || !toDate) {
+        toast.error("Please select 'From' and 'To' dates for detailed waste report.");
+        return;
+      }
+
+      setCsvExporting(true);
+
+      const { data } = await axios.get(
+        `${backendUrl}/transaction/get-store-filter-transactions/${storeId}/${fromDate}/${toDate}`,
+        { withCredentials: true }
+      );
+
+      if (!data?.success || !Array.isArray(data?.items)) {
+        toast.error("No detailed transaction records found for the selected dates.");
+        return;
+      }
+
+      // Safe CSV escaper
+      const escapeCsv = (val) => {
+        if (val === null || val === undefined) return '""';
+        const str = String(val);
+        return `"${str.replace(/"/g, '""')}"`;
+      };
+
+      // Table columns: SN, Material, Decathlon Type, Items, Weight (kg), Rate (Rs.), Amount (Rs.)
+      const headers = [
+        "SN",
+        "Material",
+        "Decathlon Type",
+        "Items",
+        "Weight (kg)",
+        "Rate (Rs.)",
+        "Amount (Rs.)",
+      ];
+
+      const grandTotalWeight = data.items.reduce(
+        (sum, item) => sum + Number(item.weight || 0),
+        0
+      );
+
+      const grandTotalAmount = data.items.reduce(
+        (sum, item) => sum + Number(item.totalAmount || 0),
+        0
+      );
+
+      const grandTotalItems = data.items.reduce(
+        (sum, item) => sum + Number(item.totalItems || 0),
+        0
+      );
+
+      const rows = data.items.map((item, index) => [
+        index + 1,
+        item.materialType || "-",
+        item.decathlonType || "-",
+        item.totalItems || 0,
+        Number(item.weight || 0).toFixed(2),
+        Number(item.rate || 0).toFixed(2),
+        Number(item.totalAmount || 0).toFixed(2),
+      ]);
+
+      const footerRow = [
+        "Grand Total",
+        "",
+        "",
+        grandTotalItems,
+        grandTotalWeight.toFixed(2),
+        "",
+        grandTotalAmount.toFixed(2),
+      ];
+
+      const csvHeader = headers.map(escapeCsv).join(",");
+      const csvLines = [
+        ...rows.map((row) => row.map(escapeCsv).join(",")),
+        footerRow.map(escapeCsv).join(","),
+      ];
+
+      // Prepend UTF-8 BOM (\uFEFF) for Excel compatibility
+      const csvContent = "\uFEFF" + [csvHeader, ...csvLines].join("\r\n");
+
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+
+      const filename = `${(data.storeName || storeName || "Store").replace(
+        /\s/g,
+        "_"
+      )}_${fromDate}_${toDate}.csv`;
+
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+
+      toast.success("Detailed store waste report CSV downloaded successfully!");
+    } catch (error) {
+      console.error("CSV export error:", error);
+      toast.error(
+        error.response?.data?.message || "Failed to export detailed store report CSV."
+      );
+    } finally {
+      setCsvExporting(false);
+    }
+  };
+
+  /* 
      EXPORT 2: STORE FINANCIAL SUMMARY PDF (Total, Revenue, Net, Payable, Receivable)
   */
   const exportSummaryPDF = () => {
@@ -491,8 +602,8 @@ const AdminStoreTransactions = () => {
         summaryDateRange?.from && summaryDateRange?.to
           ? `${summaryDateRange.from} to ${summaryDateRange.to}`
           : fromDate && toDate
-          ? `${fromDate} to ${toDate}`
-          : "All Time (Complete History)";
+            ? `${fromDate} to ${toDate}`
+            : "All Time (Complete History)";
 
       doc.setFont("helvetica", "bold");
       doc.text("Store Name:", 14, cursorY);
@@ -504,8 +615,7 @@ const AdminStoreTransactions = () => {
       doc.text("Location:", 14, cursorY);
       doc.setFont("helvetica", "normal");
       doc.text(
-        `${storeInfo.storeLocation || "N/A"}${
-          storeInfo.storeState ? `, ${storeInfo.storeState}` : ""
+        `${storeInfo.storeLocation || "N/A"}${storeInfo.storeState ? `, ${storeInfo.storeState}` : ""
         }`,
         48,
         cursorY
@@ -572,8 +682,8 @@ const AdminStoreTransactions = () => {
         summaryDateRange?.from && summaryDateRange?.to
           ? `${summaryDateRange.from}_to_${summaryDateRange.to}`
           : fromDate && toDate
-          ? `${fromDate}_to_${toDate}`
-          : "all_time";
+            ? `${fromDate}_to_${toDate}`
+            : "all_time";
 
       const filename = `${(storeName || "Store").replace(
         /\s/g,
@@ -748,11 +858,10 @@ const AdminStoreTransactions = () => {
                   key={preset.value}
                   type="button"
                   onClick={() => handleApplyPreset(preset.value)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition cursor-pointer ${
-                    isActive
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition cursor-pointer ${isActive
                       ? "bg-blue-900 text-white shadow-xs"
                       : "bg-slate-100 hover:bg-slate-200 text-slate-600"
-                  }`}
+                    }`}
                 >
                   {preset.label}
                 </button>
@@ -769,22 +878,20 @@ const AdminStoreTransactions = () => {
             {/* 1. NET BALANCE CARD */}
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 hover:shadow-md transition-all duration-300 relative overflow-hidden group">
               <div
-                className={`absolute top-0 left-0 right-0 h-1.5 ${
-                  summary.net >= 0
+                className={`absolute top-0 left-0 right-0 h-1.5 ${summary.net >= 0
                     ? "bg-gradient-to-r from-emerald-500 to-teal-500"
                     : "bg-gradient-to-r from-rose-500 to-amber-500"
-                }`}
+                  }`}
               />
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                   Net Balance
                 </span>
                 <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                    summary.net >= 0
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center ${summary.net >= 0
                       ? "bg-emerald-50 text-emerald-600"
                       : "bg-rose-50 text-rose-600"
-                  }`}
+                    }`}
                 >
                   {summary.net >= 0 ? (
                     <TrendingUp size={20} />
@@ -799,9 +906,8 @@ const AdminStoreTransactions = () => {
                   <div className="h-8 w-36 bg-slate-200 animate-pulse rounded-lg" />
                 ) : (
                   <p
-                    className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${
-                      summary.net >= 0 ? "text-emerald-700" : "text-rose-700"
-                    }`}
+                    className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${summary.net >= 0 ? "text-emerald-700" : "text-rose-700"
+                      }`}
                   >
                     {formatCurrency(summary.net)}
                   </p>
@@ -809,11 +915,10 @@ const AdminStoreTransactions = () => {
                 <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
                   <span>Receivable − Payable</span>
                   <span
-                    className={`font-semibold px-2 py-0.5 rounded-md ${
-                      summary.net >= 0
+                    className={`font-semibold px-2 py-0.5 rounded-md ${summary.net >= 0
                         ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
                         : "bg-rose-50 text-rose-700 border border-rose-200/60"
-                    }`}
+                      }`}
                   >
                     {summary.net >= 0 ? "Surplus" : "Deficit"}
                   </span>
@@ -1211,8 +1316,8 @@ const AdminStoreTransactions = () => {
                         {summaryDateRange?.from && summaryDateRange?.to
                           ? `${summaryDateRange.from} to ${summaryDateRange.to}`
                           : fromDate && toDate
-                          ? `${fromDate} to ${toDate}`
-                          : "All Time (Complete History)"}
+                            ? `${fromDate} to ${toDate}`
+                            : "All Time (Complete History)"}
                       </span>
                     </div>
 
@@ -1233,9 +1338,8 @@ const AdminStoreTransactions = () => {
                     <div className="flex justify-between text-slate-600">
                       <span>Net Balance:</span>
                       <span
-                        className={`font-semibold ${
-                          summary.net >= 0 ? "text-emerald-700" : "text-rose-700"
-                        }`}
+                        className={`font-semibold ${summary.net >= 0 ? "text-emerald-700" : "text-rose-700"
+                          }`}
                       >
                         {formatCurrency(summary.net)}
                       </span>
@@ -1256,17 +1360,17 @@ const AdminStoreTransactions = () => {
                     </div>
                   </div>
 
-                  {/* Two Export Options: Original Waste PDF & New Financial Summary PDF */}
+                  {/* Two Export Options: Detailed Waste Report CSV & Financial Summary PDF */}
                   <div className="space-y-3 pt-1">
-                    {/* Export 1: Original Store Detailed Waste Report */}
+                    {/* Export 1: Detailed Store Waste Report CSV */}
                     <div className="p-3.5 rounded-xl border border-slate-200 bg-white hover:border-blue-300 transition flex items-center justify-between gap-3">
                       <div className="space-y-0.5">
                         <p className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
                           <FileDown size={15} className="text-blue-900" />
-                          <span>Detailed Waste Report (PDF)</span>
+                          <span>Detailed Waste Report (CSV)</span>
                         </p>
                         <p className="text-[11px] text-slate-500">
-                          Itemized materials, weights, rates, and amounts
+                          Itemized materials, decathlon type, weights, rates, and amounts
                         </p>
                         {!fromDate || !toDate ? (
                           <span className="inline-block text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded font-medium">
@@ -1276,11 +1380,11 @@ const AdminStoreTransactions = () => {
                       </div>
 
                       <button
-                        onClick={exportPDF}
-                        disabled={detailedExporting}
+                        onClick={exportCSV}
+                        disabled={csvExporting}
                         className="px-3.5 py-2 bg-blue-900 hover:bg-blue-800 text-white rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50 shrink-0"
                       >
-                        {detailedExporting ? (
+                        {csvExporting ? (
                           <>
                             <Loader2 size={13} className="animate-spin" />
                             <span>Exporting...</span>
@@ -1288,7 +1392,7 @@ const AdminStoreTransactions = () => {
                         ) : (
                           <>
                             <FileDown size={13} />
-                            <span>Export PDF</span>
+                            <span>Export CSV</span>
                           </>
                         )}
                       </button>
