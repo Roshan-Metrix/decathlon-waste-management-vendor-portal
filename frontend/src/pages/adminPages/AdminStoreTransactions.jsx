@@ -21,6 +21,7 @@ import {
   Trash2,
   FileText,
   FileDown,
+  FileSpreadsheet,
   CheckCircle2,
   Clock,
   X,
@@ -36,6 +37,65 @@ import NavBar from "../../components/NavBar";
 import { formatCurrency } from "../../lib/formatCurrency";
 import { formatDate } from "../../lib/Helper";
 import { StoreTransactionSkeleton } from "../../utils/Skeleton";
+
+// 55 standard heading columns for Invoice CSV export matching database template
+const INVOICE_CSV_COLUMNS = [
+  "Cost Center",
+  "Store Code",
+  "gstin_of_consignee",
+  "legal_name_of_consignee",
+  "address1_of_consignee",
+  "address2_of_consignee",
+  "place_of_consignee",
+  "pincode_of_consignee",
+  "state_of_supply",
+  "document_number",
+  "document_date",
+  "ref_document_number",
+  "note_type",
+  "reason",
+  "original_document_number",
+  "original_document_date",
+  "po_number",
+  "order_dt",
+  "p_due_date",
+  "s_dt",
+  "item_code",
+  "payment_type",
+  "hsn_code",
+  "product_name_item",
+  "product_description_item",
+  "unit_of_product_item",
+  "quantity_item",
+  "taxable_amount_item",
+  "discount",
+  "gst_rate_item",
+  "cess_amount_item",
+  "freight_amount",
+  "ins_amount",
+  "pack_for_amount",
+  "supply_type",
+  "sub_supply_type",
+  "document_type",
+  "transporter_id",
+  "transporter_name",
+  "approximate_distance",
+  "transportation_mode",
+  "vehicle_number",
+  "vehicle_type",
+  "transporter_doc_no",
+  "transporter_doc_date",
+  "order_id",
+  "ref_order_id",
+  "original_order_id",
+  "is_amended",
+  "return_period",
+  "delivery_challan",
+  "dispatch_date",
+  "actual_to_state",
+  "tcs_rate",
+  "Including Tax",
+];
 
 const PAGE_SIZES = [6, 10, 20];
 
@@ -83,6 +143,7 @@ const AdminStoreTransactions = () => {
   const [exportModalStatus, setExportModalStatus] = useState("ready");
   const [detailedExporting, setDetailedExporting] = useState(false);
   const [csvExporting, setCsvExporting] = useState(false);
+  const [invoiceCsvExporting, setInvoiceCsvExporting] = useState(false);
   const [summaryExporting, setSummaryExporting] = useState(false);
 
   // Helper to format Date to YYYY-MM-DD
@@ -565,6 +626,113 @@ const AdminStoreTransactions = () => {
   };
 
   /* 
+     EXPORT: TRANSACTION INVOICE CSV (55 Columns, same as AdminDashboard)
+     Hits: /transaction/transaction-invoice?from=...&to=...&storeId=...
+  */
+  const handleExportInvoiceCSV = async () => {
+    try {
+      setInvoiceCsvExporting(true);
+
+      const from = summaryDateRange?.from || fromDate || "";
+      const to = summaryDateRange?.to || toDate || "";
+
+      let url = `${backendUrl}/transaction/transaction-invoice`;
+      const queryParts = [];
+      if (from && to) {
+        queryParts.push(`from=${from}`, `to=${to}`);
+      } else if ((from && !to) || (!from && to)) {
+        toast.error("Please provide both 'From' and 'To' dates for invoice export.");
+        setInvoiceCsvExporting(false);
+        return;
+      }
+
+      if (storeId) {
+        queryParts.push(`storeId=${storeId}`);
+      }
+
+      if (queryParts.length > 0) {
+        url += `?${queryParts.join("&")}`;
+      }
+
+      const { data } = await axios.get(url, { withCredentials: true });
+
+      if (!data?.success) {
+        toast.error(data?.message || "Failed to fetch transaction invoice data.");
+        return;
+      }
+
+      let rowsData = Array.isArray(data.data) ? data.data : [];
+
+      // Filter rows for this specific store if multiple stores are returned
+      if (
+        storeId &&
+        rowsData.some(
+          (row) => String(row["Store Code"] ?? "").trim() === String(storeId).trim()
+        )
+      ) {
+        rowsData = rowsData.filter(
+          (row) => String(row["Store Code"] ?? "").trim() === String(storeId).trim()
+        );
+      }
+
+      if (rowsData.length === 0) {
+        toast.info("No transaction invoice records found for the selected period.");
+      }
+
+      // Safe CSV cell escaper (preserves leading zeros in Excel for Store Code and numeric codes)
+      const escapeCsv = (val, col) => {
+        if (val === null || val === undefined) return '""';
+        const str = String(val);
+        if (col === "Store Code" || (typeof val === "string" && /^0\d+$/.test(str))) {
+          return `="""${str}"""`;
+        }
+        return `"${str.replace(/"/g, '""')}"`;
+      };
+
+      // Header row using the 55 exact columns
+      const csvHeader = INVOICE_CSV_COLUMNS.map((col) => `"${col}"`).join(",");
+
+      // Data rows mapped to the exact 55 columns
+      const csvLines = rowsData.map((row) =>
+        INVOICE_CSV_COLUMNS.map((col) => escapeCsv(row[col], col)).join(",")
+      );
+
+      // Prepend UTF-8 BOM (\uFEFF) for perfect Excel encoding
+      const csvContent = "\uFEFF" + [csvHeader, ...csvLines].join("\r\n");
+
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+
+      const fileDateLabel = from && to ? `${from}_to_${to}` : "all_time";
+      link.setAttribute(
+        "download",
+        `Transaction_Invoice_${(storeName || storeId || "Store").replace(
+          /\s/g,
+          "_"
+        )}_${fileDateLabel}.csv`
+      );
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+
+      toast.success(
+        `Invoice CSV downloaded successfully (${rowsData.length} records)!`
+      );
+    } catch (err) {
+      console.error("Invoice CSV export error:", err);
+      toast.error(
+        err.response?.data?.message || "Failed to export invoice CSV."
+      );
+    } finally {
+      setInvoiceCsvExporting(false);
+    }
+  };
+
+  /* 
      EXPORT 2: STORE FINANCIAL SUMMARY PDF (Total, Revenue, Net, Payable, Receivable)
   */
   const exportSummaryPDF = () => {
@@ -859,8 +1027,8 @@ const AdminStoreTransactions = () => {
                   type="button"
                   onClick={() => handleApplyPreset(preset.value)}
                   className={`px-3 py-1 rounded-full text-xs font-medium transition cursor-pointer ${isActive
-                      ? "bg-blue-900 text-white shadow-xs"
-                      : "bg-slate-100 hover:bg-slate-200 text-slate-600"
+                    ? "bg-blue-900 text-white shadow-xs"
+                    : "bg-slate-100 hover:bg-slate-200 text-slate-600"
                     }`}
                 >
                   {preset.label}
@@ -879,8 +1047,8 @@ const AdminStoreTransactions = () => {
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 hover:shadow-md transition-all duration-300 relative overflow-hidden group">
               <div
                 className={`absolute top-0 left-0 right-0 h-1.5 ${summary.net >= 0
-                    ? "bg-gradient-to-r from-emerald-500 to-teal-500"
-                    : "bg-gradient-to-r from-rose-500 to-amber-500"
+                  ? "bg-gradient-to-r from-emerald-500 to-teal-500"
+                  : "bg-gradient-to-r from-rose-500 to-amber-500"
                   }`}
               />
               <div className="flex items-center justify-between">
@@ -889,8 +1057,8 @@ const AdminStoreTransactions = () => {
                 </span>
                 <div
                   className={`w-9 h-9 rounded-xl flex items-center justify-center ${summary.net >= 0
-                      ? "bg-emerald-50 text-emerald-600"
-                      : "bg-rose-50 text-rose-600"
+                    ? "bg-emerald-50 text-emerald-600"
+                    : "bg-rose-50 text-rose-600"
                     }`}
                 >
                   {summary.net >= 0 ? (
@@ -916,8 +1084,8 @@ const AdminStoreTransactions = () => {
                   <span>Receivable − Payable</span>
                   <span
                     className={`font-semibold px-2 py-0.5 rounded-md ${summary.net >= 0
-                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
-                        : "bg-rose-50 text-rose-700 border border-rose-200/60"
+                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+                      : "bg-rose-50 text-rose-700 border border-rose-200/60"
                       }`}
                   >
                     {summary.net >= 0 ? "Surplus" : "Deficit"}
@@ -1257,60 +1425,61 @@ const AdminStoreTransactions = () => {
       </main>
 
       {/* 
-          EXPORT MODAL (Featuring Both Exports: Original Detailed Waste Report + New Financial Summary)
+          EXPORT MODAL (Featuring Three Exports: Detailed Waste CSV, Invoice CSV & Financial Summary PDF)
       */}
       {isExportModalOpen && (
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200"
         >
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full overflow-hidden transition-all scale-100">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full overflow-hidden transition-all scale-100 flex flex-col max-h-[90vh]">
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-blue-900 to-indigo-900 px-6 py-4 flex items-center justify-between text-white">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white">
-                  <Download size={18} />
+            <div className="bg-gradient-to-r from-blue-900 to-indigo-900 px-5 py-3 flex items-center justify-between text-white shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-white">
+                  <Download size={16} />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold">Export Store Reports</h3>
-                  <p className="text-xs text-blue-100">
+                  <h3 className="text-sm sm:text-base font-bold leading-tight">Export Store Reports</h3>
+                  <p className="text-[11px] text-blue-100 leading-tight">
                     {storeName || "Store"} • ID: {storeId}
                   </p>
                 </div>
               </div>
               <button
                 onClick={handleCloseExportModal}
-                className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-white/80 hover:text-white transition cursor-pointer"
+                className="w-7 h-7 rounded-lg hover:bg-white/10 flex items-center justify-center text-white/80 hover:text-white transition cursor-pointer"
+                title="Close modal"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 space-y-5">
+            <div className="p-4 sm:p-5 space-y-3 overflow-y-auto">
               {exportModalStatus === "processing" ? (
-                <div className="flex flex-col items-center justify-center py-4 space-y-3">
-                  <Loader2 size={36} className="text-blue-900 animate-spin" />
-                  <p className="text-sm font-semibold text-slate-700">
+                <div className="flex flex-col items-center justify-center py-6 space-y-2.5">
+                  <Loader2 size={32} className="text-blue-900 animate-spin" />
+                  <p className="text-xs sm:text-sm font-semibold text-slate-700">
                     Preparing report data...
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-[11px] text-slate-400">
                     Compiling store financial metrics and records
                   </p>
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200/80 rounded-xl text-blue-900 text-xs">
-                    <CheckCircle2 size={16} className="text-blue-900 shrink-0" />
+                  <div className="flex items-center gap-2 py-1.5 px-3 bg-blue-50 border border-blue-200/80 rounded-lg text-blue-900 text-[11px]">
+                    <CheckCircle2 size={14} className="text-blue-900 shrink-0" />
                     <span>
                       Select the report type you wish to download below.
                     </span>
                   </div>
 
-                  {/* Summary Details Preview Box */}
-                  <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 space-y-2.5 text-xs">
-                    <div className="flex justify-between pb-2 border-b border-slate-200 text-slate-600">
+                  {/* Summary Details Preview Box (Compact 2-Column Grid) */}
+                  <div className="bg-slate-50 rounded-xl border border-slate-200 p-3 space-y-1.5 text-[11px]">
+                    <div className="flex justify-between pb-1.5 border-b border-slate-200 text-slate-600">
                       <span className="font-medium">Active Date Scope:</span>
                       <span className="font-semibold text-slate-900">
                         {summaryDateRange?.from && summaryDateRange?.to
@@ -1321,59 +1490,62 @@ const AdminStoreTransactions = () => {
                       </span>
                     </div>
 
-                    <div className="flex justify-between text-slate-600">
-                      <span>Total Store Transactions:</span>
-                      <span className="font-semibold text-slate-900">
-                        {summary.transactionCount || 0}
-                      </span>
-                    </div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-slate-600 pt-0.5">
+                      <div className="flex justify-between">
+                        <span>Transactions:</span>
+                        <span className="font-semibold text-slate-900">
+                          {summary.transactionCount || 0}
+                        </span>
+                      </div>
 
-                    <div className="flex justify-between text-slate-600">
-                      <span>Total Revenue / Volume:</span>
-                      <span className="font-semibold text-slate-900">
-                        {formatCurrency(summary.total)}
-                      </span>
-                    </div>
+                      <div className="flex justify-between">
+                        <span>Turnover:</span>
+                        <span className="font-semibold text-slate-900">
+                          {formatCurrency(summary.total)}
+                        </span>
+                      </div>
 
-                    <div className="flex justify-between text-slate-600">
-                      <span>Net Balance:</span>
-                      <span
-                        className={`font-semibold ${summary.net >= 0 ? "text-emerald-700" : "text-rose-700"
+                      <div className="flex justify-between">
+                        <span>Net Balance:</span>
+                        <span
+                          className={`font-semibold ${
+                            summary.net >= 0 ? "text-emerald-700" : "text-rose-700"
                           }`}
-                      >
-                        {formatCurrency(summary.net)}
-                      </span>
-                    </div>
+                        >
+                          {formatCurrency(summary.net)}
+                        </span>
+                      </div>
 
-                    <div className="flex justify-between text-slate-600">
-                      <span>Total Payable:</span>
-                      <span className="font-semibold text-amber-700">
-                        {formatCurrency(summary.payable)}
-                      </span>
-                    </div>
+                      <div className="flex justify-between">
+                        <span>Payable:</span>
+                        <span className="font-semibold text-amber-700">
+                          {formatCurrency(summary.payable)}
+                        </span>
+                      </div>
 
-                    <div className="flex justify-between text-slate-600">
-                      <span>Total Receivable:</span>
-                      <span className="font-semibold text-indigo-700">
-                        {formatCurrency(summary.receivable)}
-                      </span>
+                      <div className="flex justify-between col-span-2">
+                        <span>Receivable:</span>
+                        <span className="font-semibold text-indigo-700">
+                          {formatCurrency(summary.receivable)}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Two Export Options: Detailed Waste Report CSV & Financial Summary PDF */}
-                  <div className="space-y-3 pt-1">
+                  {/* Three Export Options */}
+                  <div className="space-y-2 pt-0.5">
                     {/* Export 1: Detailed Store Waste Report CSV */}
-                    <div className="p-3.5 rounded-xl border border-slate-200 bg-white hover:border-blue-300 transition flex items-center justify-between gap-3">
+                    <div className="p-2.5 sm:p-3 rounded-xl border border-slate-200 bg-white hover:border-blue-300 transition flex items-center justify-between gap-3">
                       <div className="space-y-0.5">
                         <p className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                          <FileDown size={15} className="text-blue-900" />
+                          <FileDown size={14} className="text-blue-900" />
                           <span>Detailed Waste Report (CSV)</span>
                         </p>
                         <p className="text-[11px] text-slate-500">
                           Itemized materials, decathlon type, weights, rates, and amounts
                         </p>
                         {!fromDate || !toDate ? (
-                          <span className="inline-block text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded font-medium">
+                          <span className="inline-block text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded font-medium">
                             *Requires From & To dates
                           </span>
                         ) : null}
@@ -1382,7 +1554,7 @@ const AdminStoreTransactions = () => {
                       <button
                         onClick={exportCSV}
                         disabled={csvExporting}
-                        className="px-3.5 py-2 bg-blue-900 hover:bg-blue-800 text-white rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50 shrink-0"
+                        className="px-3 py-1.5 bg-blue-900 hover:bg-blue-800 text-white rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50 shrink-0"
                       >
                         {csvExporting ? (
                           <>
@@ -1398,11 +1570,47 @@ const AdminStoreTransactions = () => {
                       </button>
                     </div>
 
-                    {/* Export 2: Financial Summary PDF (Total, Revenue, Net, Payable, Receivable) */}
-                    <div className="p-3.5 rounded-xl border border-slate-200 bg-white hover:border-emerald-300 transition flex items-center justify-between gap-3">
+                    {/* Export 2: Transaction Invoice CSV (55 Columns, matching AdminDashboard) */}
+                    <div className="p-2.5 sm:p-3 rounded-xl border border-slate-200 bg-white hover:border-slate-400 transition flex items-center justify-between gap-3">
                       <div className="space-y-0.5">
                         <p className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                          <FileText size={15} className="text-emerald-700" />
+                          <FileSpreadsheet size={14} className="text-slate-800" />
+                          <span>Transaction Invoice (CSV)</span>
+                        </p>
+                        <p className="text-[11px] text-slate-500">
+                          55-column standard GST invoice export template
+                        </p>
+                        {((fromDate && !toDate) || (!fromDate && toDate)) ? (
+                          <span className="inline-block text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded font-medium">
+                            *Provide both From & To dates if filtering
+                          </span>
+                        ) : null}
+                      </div>
+
+                      <button
+                        onClick={handleExportInvoiceCSV}
+                        disabled={invoiceCsvExporting}
+                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50 shrink-0"
+                      >
+                        {invoiceCsvExporting ? (
+                          <>
+                            <Loader2 size={13} className="animate-spin" />
+                            <span>Exporting...</span>
+                          </>
+                        ) : (
+                          <>
+                            <FileSpreadsheet size={13} />
+                            <span>Invoice CSV</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Export 3: Financial Summary PDF (Total, Revenue, Net, Payable, Receivable) */}
+                    <div className="p-2.5 sm:p-3 rounded-xl border border-slate-200 bg-white hover:border-emerald-300 transition flex items-center justify-between gap-3">
+                      <div className="space-y-0.5">
+                        <p className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                          <FileText size={14} className="text-emerald-700" />
                           <span>Financial Summary (PDF)</span>
                         </p>
                         <p className="text-[11px] text-slate-500">
@@ -1413,7 +1621,7 @@ const AdminStoreTransactions = () => {
                       <button
                         onClick={exportSummaryPDF}
                         disabled={summaryExporting}
-                        className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50 shrink-0"
+                        className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50 shrink-0"
                       >
                         {summaryExporting ? (
                           <>
@@ -1434,10 +1642,10 @@ const AdminStoreTransactions = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex justify-end">
+            <div className="px-5 py-2.5 bg-slate-50 border-t border-slate-200 flex justify-end shrink-0">
               <button
                 onClick={handleCloseExportModal}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition cursor-pointer"
+                className="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition cursor-pointer"
               >
                 Close
               </button>
