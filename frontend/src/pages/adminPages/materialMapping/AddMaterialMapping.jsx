@@ -1,9 +1,7 @@
 import React, { useContext, useEffect, useState, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   MdAltRoute,
-  MdLocationOn,
-  MdBusiness,
   MdAdd,
   MdDelete,
   MdCheckCircle,
@@ -21,14 +19,12 @@ import { AppContent } from "../../../context/AppContext";
 // Standard Decathlon material categories for quick suggestions
 const OFFICIAL_MATERIAL_SUGGESTIONS = [
   "Defective Products",
-  "Recycling Hard Plastic",
   "Hazardous Waste",
   "Recycling Batteries",
-  "Recycling Paper/cardboard",
   "Recycling E Waste",
   "Recycling Glass",
   "Recycling Hard Plastic",
-  "Recycling Hard Plastic",
+  "Recycling Lighting Products",
   "Recycling Metal",
   "Recycling Mixed Packaging",
   "Recycling Organic",
@@ -40,26 +36,11 @@ const OFFICIAL_MATERIAL_SUGGESTIONS = [
   "Waste incineration",
   "Waste incineration energy recovery",
   "Waste landfill",
-  "Recycling Lighting Products",
 ];
 
 const AddMaterialMapping = () => {
   const { backendUrl } = useContext(AppContent);
   const navigate = useNavigate();
-  const location = useLocation();
-
-  // Region and Vendor states
-  const [regions, setRegions] = useState([]);
-  const [regionsLoading, setRegionsLoading] = useState(false);
-  const [selectedRegion, setSelectedRegion] = useState(
-    location.state?.region || "",
-  );
-
-  const [vendors, setVendors] = useState([]);
-  const [vendorsLoading, setVendorsLoading] = useState(false);
-  const [selectedVendor, setSelectedVendor] = useState(
-    location.state?.vendorId || "",
-  );
 
   // Mapping rows state
   const [mappings, setMappings] = useState([
@@ -90,130 +71,43 @@ const AddMaterialMapping = () => {
     return () => clearTimeout(timer);
   }, [alert]);
 
-  // Fetch Regions on mount
-  const fetchRegions = useCallback(async () => {
+  // Fetch existing material mapping from backend
+  const fetchExistingMapping = useCallback(async () => {
+    setCheckingExisting(true);
     try {
-      setRegionsLoading(true);
-      const { data } = await axios.get(`${backendUrl}/auth/get-regions`, {
-        withCredentials: true,
-      });
-      if (data?.success && Array.isArray(data.regions)) {
-        setRegions(data.regions);
-      }
-    } catch (err) {
-      console.error("Fetch Regions Error:", err);
-      showAlert("Failed to load regions.", "error");
-    } finally {
-      setRegionsLoading(false);
-    }
-  }, [backendUrl]);
-
-  // Fetch Vendors on mount
-  const fetchVendors = useCallback(async () => {
-    try {
-      setVendorsLoading(true);
       const { data } = await axios.get(
-        `${backendUrl}/vendor/get-all-vendors?limit=100`,
+        `${backendUrl}/auth/get-material-mapping`,
         { withCredentials: true },
       );
-      if (data?.success && Array.isArray(data.vendors)) {
-        setVendors(data.vendors);
+
+      if (
+        data?.success &&
+        Array.isArray(data.data?.materials) &&
+        data.data.materials.length > 0
+      ) {
+        setMappings(
+          data.data.materials.map((m) => ({
+            materialType: m.materialType || "",
+            officialMaterialType: m.officialMaterialType || "",
+          })),
+        );
+        setIsExistingMapping(true);
+      } else {
+        setIsExistingMapping(false);
+        setMappings([{ materialType: "", officialMaterialType: "" }]);
       }
     } catch (err) {
-      console.error("Fetch Vendors Error:", err);
-      showAlert("Failed to load vendors.", "error");
+      console.error("Fetch Existing Mapping Error:", err);
+      setIsExistingMapping(false);
+      setMappings([{ materialType: "", officialMaterialType: "" }]);
     } finally {
-      setVendorsLoading(false);
+      setCheckingExisting(false);
     }
   }, [backendUrl]);
 
   useEffect(() => {
-    fetchRegions();
-    fetchVendors();
-  }, [fetchRegions, fetchVendors]);
-
-  // When both Region and Vendor are selected, fetch existing mapping or regional materials
-  const fetchExistingMappingOrRates = useCallback(
-    async (region, vendorId) => {
-      setCheckingExisting(true);
-      try {
-        // 1. Check if mapping already exists
-        const mappingRes = await axios.get(
-          `${backendUrl}/auth/get-material-mapping/${region.trim()}/${vendorId}`,
-          { withCredentials: true },
-        );
-
-        if (
-          mappingRes.data?.success &&
-          Array.isArray(mappingRes.data.data?.materials) &&
-          mappingRes.data.data.materials.length > 0
-        ) {
-          setMappings(
-            mappingRes.data.data.materials.map((m) => ({
-              materialType: m.materialType || "",
-              officialMaterialType: m.officialMaterialType || "",
-            })),
-          );
-          setIsExistingMapping(true);
-          showAlert("Existing material mapping loaded for editing.", "info");
-          setCheckingExisting(false);
-          return;
-        }
-
-        setIsExistingMapping(false);
-
-        // 2. Fall back to regional materials to auto-fill store materials
-        try {
-          const regionalRes = await axios.get(
-            `${backendUrl}/auth/get-regional-materials/${region.trim()}/${vendorId}`,
-            { withCredentials: true },
-          );
-
-          if (
-            regionalRes.data?.success &&
-            Array.isArray(regionalRes.data?.materials) &&
-            regionalRes.data.materials.length > 0
-          ) {
-            const autoFilled = regionalRes.data.materials.map((item) => {
-              const matName = item.includes(":")
-                ? item.split(":")[0].trim()
-                : item.trim();
-              return {
-                materialType: matName,
-                officialMaterialType: "",
-              };
-            });
-            setMappings(autoFilled);
-            showAlert(
-              `Auto-populated ${autoFilled.length} materials from regional configuration.`,
-              "info",
-            );
-            setCheckingExisting(false);
-            return;
-          }
-        } catch {
-          // No regional rates, fallback to empty row
-        }
-
-        setMappings([{ materialType: "", officialMaterialType: "" }]);
-      } catch (err) {
-        console.log("Check Existing Mapping:", err?.message);
-        setIsExistingMapping(false);
-        setMappings([{ materialType: "", officialMaterialType: "" }]);
-      } finally {
-        setCheckingExisting(false);
-      }
-    },
-    [backendUrl],
-  );
-
-  useEffect(() => {
-    if (selectedRegion && selectedVendor) {
-      fetchExistingMappingOrRates(selectedRegion, selectedVendor);
-    } else {
-      setIsExistingMapping(false);
-    }
-  }, [fetchExistingMappingOrRates, selectedRegion, selectedVendor]);
+    fetchExistingMapping();
+  }, [fetchExistingMapping]);
 
   // Row operations
   const handleAddRow = () => {
@@ -259,16 +153,6 @@ const AddMaterialMapping = () => {
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
 
-    if (!selectedRegion) {
-      showAlert("Please select a Region (State).", "error");
-      return;
-    }
-
-    if (!selectedVendor) {
-      showAlert("Please select a Vendor.", "error");
-      return;
-    }
-
     const filteredMaterials = mappings
       .map((m) => ({
         materialType: m.materialType.trim(),
@@ -312,7 +196,7 @@ const AddMaterialMapping = () => {
       };
 
       const res = await axios.post(
-        `${backendUrl}/auth/add-material-mapping/${selectedRegion.trim()}/${selectedVendor}`,
+        `${backendUrl}/auth/add-material-mapping`,
         payload,
         { withCredentials: true },
       );
@@ -333,7 +217,7 @@ const AddMaterialMapping = () => {
       console.error("Save Mapping Error:", err);
       showAlert(
         err.response?.data?.message ||
-          "Failed to save material mappings. Please check if material rates are configured for this Region and Vendor.",
+          "Failed to save material mappings.",
         "error",
       );
     } finally {
@@ -401,12 +285,7 @@ const AddMaterialMapping = () => {
               <button
                 type="button"
                 onClick={() =>
-                  navigate("/dashboard/mappings/view-mapping", {
-                    state: {
-                      region: selectedRegion,
-                      vendorId: selectedVendor,
-                    },
-                  })
+                  navigate("/dashboard/admin/view-material-mappings")
                 }
                 className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl transition cursor-pointer"
               >
@@ -417,83 +296,12 @@ const AddMaterialMapping = () => {
           </div>
         </div>
 
-        {/* REGION & VENDOR SELECTORS */}
-        <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6 space-y-4">
-          <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider">
-            1. Select Region & Vendor
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Region Dropdown */}
-            <div>
-              <label
-                htmlFor="regionSelect"
-                className="mb-1.5 block text-xs font-semibold text-gray-600"
-              >
-                Region (State)
-              </label>
-              <div className="flex min-h-12 items-center gap-3 rounded-xl bg-indigo-50 px-4 transition focus-within:ring-2 focus-within:ring-blue-200">
-                <MdLocationOn size={21} className="shrink-0 text-blue-600" />
-                <select
-                  id="regionSelect"
-                  value={selectedRegion}
-                  onChange={(e) => setSelectedRegion(e.target.value)}
-                  disabled={regionsLoading}
-                  className="w-full bg-transparent py-3 text-sm text-gray-800 outline-none cursor-pointer"
-                >
-                  <option value="">
-                    {regionsLoading
-                      ? "Loading regions..."
-                      : "-- Choose a Region --"}
-                  </option>
-                  {regions.map((region) => (
-                    <option key={region} value={region}>
-                      {region}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Vendor Dropdown */}
-            <div>
-              <label
-                htmlFor="vendorSelect"
-                className="mb-1.5 block text-xs font-semibold text-gray-600"
-              >
-                Vendor
-              </label>
-              <div className="flex min-h-12 items-center gap-3 rounded-xl bg-indigo-50 px-4 transition focus-within:ring-2 focus-within:ring-blue-200">
-                <MdBusiness size={21} className="shrink-0 text-blue-600" />
-                <select
-                  id="vendorSelect"
-                  value={selectedVendor}
-                  onChange={(e) => setSelectedVendor(e.target.value)}
-                  disabled={vendorsLoading}
-                  className="w-full bg-transparent py-3 text-sm text-gray-800 outline-none cursor-pointer"
-                >
-                  <option value="">
-                    {vendorsLoading
-                      ? "Loading vendors..."
-                      : "-- Choose a Vendor --"}
-                  </option>
-                  {vendors.map((vendor) => (
-                    <option key={vendor._id} value={vendor._id}>
-                      {vendor.name} {vendor.state ? `(${vendor.state})` : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* MATERIAL MAPPING ROWS */}
         <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6 space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-gray-100 pb-3">
             <div>
               <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider">
-                2. Configure Material Mapping Pairs
+                Configure Material Mapping Pairs
               </h2>
               <p className="text-xs text-gray-500">
                 Specify each store material type and assign its Decathlon
@@ -530,7 +338,8 @@ const AddMaterialMapping = () => {
           {/* Loading Existing Mappings */}
           {checkingExisting ? (
             <div className="py-12 text-center text-sm text-gray-500">
-              Checking existing mapping configuration...
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent mb-3" />
+              <p>Loading existing mapping configuration...</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -572,7 +381,7 @@ const AddMaterialMapping = () => {
                         onChange={(e) =>
                           handleUpdateRow(index, "materialType", e.target.value)
                         }
-                        placeholder="e.g. Defective Products, Food Waste"
+                        placeholder="e.g. Defective Products, Recycling Rubber"
                         className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
                       />
                     </div>
@@ -592,7 +401,7 @@ const AddMaterialMapping = () => {
                             e.target.value,
                           )
                         }
-                        placeholder="e.g. Carton / Cardboard, Mixed Plastic"
+                        placeholder="e.g. Recycling Rubber, Recycling Paper/cardboard"
                         className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
                       />
                     </div>
