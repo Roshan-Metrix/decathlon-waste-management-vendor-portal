@@ -1,9 +1,7 @@
-import React, { useContext, useEffect, useState, useMemo, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useContext, useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   MdDeleteForever,
-  MdLocationOn,
-  MdBusiness,
   MdClose,
   MdWarning,
   MdCheckCircle,
@@ -12,7 +10,7 @@ import {
   MdStorefront,
   MdCheck,
   MdVisibility,
-  MdAltRoute,
+  MdAddCircle,
 } from "react-icons/md";
 import axios from "axios";
 import NavBar from "../../../components/NavBar";
@@ -21,20 +19,6 @@ import { AppContent } from "../../../context/AppContext";
 const RemoveMaterialMapping = () => {
   const { backendUrl } = useContext(AppContent);
   const navigate = useNavigate();
-  const location = useLocation();
-
-  // Region and Vendor states
-  const [regions, setRegions] = useState([]);
-  const [regionsLoading, setRegionsLoading] = useState(false);
-  const [selectedRegion, setSelectedRegion] = useState(
-    location.state?.region || ""
-  );
-
-  const [vendors, setVendors] = useState([]);
-  const [vendorsLoading, setVendorsLoading] = useState(false);
-  const [selectedVendor, setSelectedVendor] = useState(
-    location.state?.vendorId || ""
-  );
 
   // Mapping state
   const [mappingData, setMappingData] = useState(null);
@@ -66,110 +50,47 @@ const RemoveMaterialMapping = () => {
     return () => clearTimeout(timer);
   }, [alert]);
 
-  // Fetch Regions
-  const fetchRegions = useCallback(async () => {
+  // Fetch Active Global Mapping
+  const fetchActiveMapping = useCallback(async () => {
     try {
-      setRegionsLoading(true);
-      const { data } = await axios.get(`${backendUrl}/auth/get-regions`, {
-        withCredentials: true,
-      });
-      if (data?.success && Array.isArray(data.regions)) {
-        setRegions(data.regions);
-      }
-    } catch (err) {
-      console.error("Fetch Regions Error:", err);
-      showAlert("Failed to load regions.", "error");
-    } finally {
-      setRegionsLoading(false);
-    }
-  }, [backendUrl]);
-
-  // Fetch Vendors
-  const fetchVendors = useCallback(async () => {
-    try {
-      setVendorsLoading(true);
+      setLoading(true);
       const { data } = await axios.get(
-        `${backendUrl}/vendor/get-all-vendors?limit=100`,
+        `${backendUrl}/auth/get-material-mapping`,
         { withCredentials: true }
       );
-      if (data?.success && Array.isArray(data.vendors)) {
-        setVendors(data.vendors);
+
+      setHasQueried(true);
+
+      if (data?.success && data?.data) {
+        setMappingData(data.data);
+        setMaterials(
+          Array.isArray(data.data.materials) ? data.data.materials : []
+        );
+      } else {
+        setMappingData(null);
+        setMaterials([]);
       }
     } catch (err) {
-      console.error("Fetch Vendors Error:", err);
-      showAlert("Failed to load vendors.", "error");
+      console.error("Fetch Mapping Error:", err);
+      setHasQueried(true);
+      setMappingData(null);
+      setMaterials([]);
     } finally {
-      setVendorsLoading(false);
+      setLoading(false);
     }
   }, [backendUrl]);
 
   useEffect(() => {
-    fetchRegions();
-    fetchVendors();
-  }, [fetchRegions, fetchVendors]);
-
-  // Fetch Active Mapping
-  const fetchActiveMapping = useCallback(
-    async (region, vendorId) => {
-      if (!region || !vendorId) {
-        setMappingData(null);
-        setMaterials([]);
-        setHasQueried(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const { data } = await axios.get(
-          `${backendUrl}/auth/get-material-mapping/${region.trim()}/${vendorId}`,
-          { withCredentials: true }
-        );
-
-        setHasQueried(true);
-
-        if (data?.success && data?.data) {
-          setMappingData(data.data);
-          setMaterials(
-            Array.isArray(data.data.materials) ? data.data.materials : []
-          );
-        } else {
-          setMappingData(null);
-          setMaterials([]);
-        }
-      } catch (err) {
-        console.log("Fetch Mapping Error:", err);
-        setHasQueried(true);
-        setMappingData(null);
-        setMaterials([]);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [backendUrl]
-  );
-
-  useEffect(() => {
-    if (selectedRegion && selectedVendor) {
-      fetchActiveMapping(selectedRegion, selectedVendor);
-    } else {
-      setMappingData(null);
-      setMaterials([]);
-      setHasQueried(false);
-    }
-  }, [fetchActiveMapping, selectedRegion, selectedVendor]);
+    fetchActiveMapping();
+  }, [fetchActiveMapping]);
 
   // Handle Deletion
   const handleConfirmDelete = async () => {
-    if (!selectedRegion || !selectedVendor) {
-      showAlert("Please select both a Region and Vendor.", "error");
-      return;
-    }
-
     try {
       setRemoving(true);
 
       const res = await axios.delete(
-        `${backendUrl}/auth/delete-material-mapping/${selectedRegion.trim()}/${selectedVendor}`,
+        `${backendUrl}/auth/delete-material-mapping`,
         { withCredentials: true }
       );
 
@@ -194,11 +115,6 @@ const RemoveMaterialMapping = () => {
       setRemoving(false);
     }
   };
-
-  const activeVendorName = useMemo(() => {
-    const found = vendors.find((v) => v._id === selectedVendor);
-    return found ? `${found.name}${found.state ? ` (${found.state})` : ""}` : "";
-  }, [vendors, selectedVendor]);
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800">
@@ -247,7 +163,7 @@ const RemoveMaterialMapping = () => {
                   Remove Material Mapping
                 </h1>
                 <p className="text-sm text-gray-500">
-                  Delete configured material mapping pairs for a specific Region and Vendor
+                  Delete configured standard Decathlon material mapping definitions
                 </p>
               </div>
             </div>
@@ -257,89 +173,13 @@ const RemoveMaterialMapping = () => {
               <button
                 type="button"
                 onClick={() =>
-                  navigate("/dashboard/mappings/view-mapping", {
-                    state: {
-                      region: selectedRegion,
-                      vendorId: selectedVendor,
-                    },
-                  })
+                  navigate("/dashboard/admin/view-material-mappings")
                 }
                 className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl transition cursor-pointer"
               >
                 <MdVisibility size={16} />
                 <span>View Mappings</span>
               </button>
-            </div>
-          </div>
-        </div>
-
-        {/* REGION & VENDOR SELECTORS */}
-        <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6 space-y-4">
-          <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider">
-            1. Select Region & Vendor to Remove
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Region Dropdown */}
-            <div>
-              <label
-                htmlFor="regionSelect"
-                className="mb-1.5 block text-xs font-semibold text-gray-600"
-              >
-                Region (State)
-              </label>
-              <div className="flex min-h-12 items-center gap-3 rounded-xl bg-indigo-50 px-4 transition focus-within:ring-2 focus-within:ring-blue-200">
-                <MdLocationOn size={21} className="shrink-0 text-blue-600" />
-                <select
-                  id="regionSelect"
-                  value={selectedRegion}
-                  onChange={(e) => setSelectedRegion(e.target.value)}
-                  disabled={regionsLoading}
-                  className="w-full bg-transparent py-3 text-sm text-gray-800 outline-none cursor-pointer"
-                >
-                  <option value="">
-                    {regionsLoading
-                      ? "Loading regions..."
-                      : "-- Choose a Region --"}
-                  </option>
-                  {regions.map((region) => (
-                    <option key={region} value={region}>
-                      {region}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Vendor Dropdown */}
-            <div>
-              <label
-                htmlFor="vendorSelect"
-                className="mb-1.5 block text-xs font-semibold text-gray-600"
-              >
-                Vendor
-              </label>
-              <div className="flex min-h-12 items-center gap-3 rounded-xl bg-indigo-50 px-4 transition focus-within:ring-2 focus-within:ring-blue-200">
-                <MdBusiness size={21} className="shrink-0 text-blue-600" />
-                <select
-                  id="vendorSelect"
-                  value={selectedVendor}
-                  onChange={(e) => setSelectedVendor(e.target.value)}
-                  disabled={vendorsLoading}
-                  className="w-full bg-transparent py-3 text-sm text-gray-800 outline-none cursor-pointer"
-                >
-                  <option value="">
-                    {vendorsLoading
-                      ? "Loading vendors..."
-                      : "-- Choose a Vendor --"}
-                  </option>
-                  {vendors.map((vendor) => (
-                    <option key={vendor._id} value={vendor._id}>
-                      {vendor.name} {vendor.state ? `(${vendor.state})` : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>
             </div>
           </div>
         </div>
@@ -354,110 +194,93 @@ const RemoveMaterialMapping = () => {
           </div>
         )}
 
-        {/* NOT SELECTED PROMPT */}
-        {!loading && (!selectedRegion || !selectedVendor) && (
+        {/* NO MAPPING FOUND */}
+        {!loading && hasQueried && materials.length === 0 && (
           <div className="py-16 text-center bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center">
-              <MdAltRoute size={32} />
+            <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center">
+              <MdCheck size={32} className="text-emerald-500" />
             </div>
             <h3 className="text-base font-bold text-gray-800">
-              Select Region & Vendor
+              No Material Mappings Configured
             </h3>
             <p className="text-xs text-gray-500 max-w-sm mx-auto mt-1">
-              Select both a region and vendor above to preview active mappings before removal.
+              There are no material mappings saved in the system. Nothing to remove.
             </p>
+            <button
+              type="button"
+              onClick={() =>
+                navigate("/dashboard/admin/add-material-mappings")
+              }
+              className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm transition cursor-pointer"
+            >
+              <MdAddCircle size={16} />
+              <span>Add Material Mapping</span>
+            </button>
           </div>
         )}
 
-        {/* NO MAPPING FOUND */}
-        {!loading &&
-          selectedRegion &&
-          selectedVendor &&
-          hasQueried &&
-          materials.length === 0 && (
-            <div className="py-16 text-center bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-              <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center">
-                <MdCheck size={32} className="text-emerald-500" />
-              </div>
-              <h3 className="text-base font-bold text-gray-800">
-                No Mapping Exists
-              </h3>
-              <p className="text-xs text-gray-500 max-w-sm mx-auto mt-1">
-                There are no material mappings configured for{" "}
-                <span className="font-semibold text-gray-800">
-                  {selectedRegion}
-                </span>{" "}
-                with this vendor. Nothing to remove.
-              </p>
-            </div>
-          )}
-
         {/* ACTIVE MAPPING PREVIEW & REMOVAL ACTION */}
-        {!loading &&
-          selectedRegion &&
-          selectedVendor &&
-          materials.length > 0 && (
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-rose-200 bg-rose-50/40 p-5 shadow-sm sm:p-6 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div>
-                    <span className="text-xs font-bold text-rose-700 uppercase tracking-wider block">
-                      Active Mapping Found
-                    </span>
-                    <h3 className="text-base font-bold text-gray-900 mt-1">
-                      {mappingData?.region || selectedRegion} —{" "}
-                      {mappingData?.vendor || activeVendorName || "Selected Vendor"}
-                    </h3>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Contains {materials.length} material mapping pairs
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setModalVisible(true)}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-sm transition cursor-pointer"
-                  >
-                    <MdDeleteForever size={18} />
-                    <span>Delete All Mappings</span>
-                  </button>
+        {!loading && materials.length > 0 && (
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-rose-200 bg-rose-50/40 p-5 shadow-sm sm:p-6 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <span className="text-xs font-bold text-rose-700 uppercase tracking-wider block">
+                    Active Mapping Found
+                  </span>
+                  <h3 className="text-base font-bold text-gray-900 mt-1">
+                    Standard Decathlon Waste Mappings
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Contains {materials.length} material mapping pairs active globally
+                  </p>
                 </div>
-              </div>
 
-              {/* LIST OF PAIRS THAT WILL BE DELETED */}
-              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6 space-y-3">
-                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Mapping Pairs to be Removed ({materials.length})
-                </h4>
-
-                <div className="space-y-2">
-                  {materials.map((item, index) => (
-                    <div
-                      key={index}
-                      className="p-3 rounded-xl border border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs gap-2"
-                    >
-                      <div className="flex items-center gap-2 text-gray-700">
-                        <span className="font-bold text-gray-400">
-                          #{index + 1}
-                        </span>
-                        <MdStorefront size={16} className="text-blue-600 shrink-0" />
-                        <span className="font-semibold text-gray-900">
-                          {item.materialType}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <span className="text-gray-400">maps to</span>
-                        <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                          {item.officialMaterialType}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setModalVisible(true)}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-sm transition cursor-pointer"
+                >
+                  <MdDeleteForever size={18} />
+                  <span>Delete All Mappings</span>
+                </button>
               </div>
             </div>
-          )}
+
+            {/* LIST OF PAIRS THAT WILL BE DELETED */}
+            <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6 space-y-3">
+              <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                Mapping Pairs to be Removed ({materials.length})
+              </h4>
+
+              <div className="space-y-2">
+                {materials.map((item, index) => (
+                  <div
+                    key={index}
+                    className="p-3 rounded-xl border border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs gap-2"
+                  >
+                    <div className="flex items-center gap-2 text-gray-700">
+                      <span className="font-bold text-gray-400">
+                        #{index + 1}
+                      </span>
+                      <MdStorefront size={16} className="text-blue-600 shrink-0" />
+                      <span className="font-semibold text-gray-900">
+                        {item.materialType}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <span className="text-gray-400">maps to</span>
+                      <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        {item.officialMaterialType}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* CONFIRMATION MODAL */}
         {modalVisible && (
@@ -476,23 +299,17 @@ const RemoveMaterialMapping = () => {
                     Confirm Removal
                   </h3>
                   <p className="text-xs text-gray-500">
-                    Are you sure you want to delete these mappings?
+                    Are you sure you want to delete all material mappings?
                   </p>
                 </div>
               </div>
 
               <div className="p-3.5 bg-rose-50 rounded-xl border border-rose-200 text-xs text-rose-900 space-y-1">
                 <p>
-                  <strong>Region:</strong> {selectedRegion}
-                </p>
-                <p>
-                  <strong>Vendor:</strong> {activeVendorName || selectedVendor}
-                </p>
-                <p>
-                  <strong>Mapped Items:</strong> {materials.length} pairs
+                  <strong>Total Pairs:</strong> {materials.length} configured mappings
                 </p>
                 <p className="pt-1 text-[11px] text-rose-700">
-                  ⚠️ This action is irreversible. All store-to-official material mapping definitions for this combination will be permanently deleted.
+                  ⚠️ This action is irreversible. All store-to-official material mapping definitions will be permanently deleted from the database.
                 </p>
               </div>
 
@@ -512,7 +329,7 @@ const RemoveMaterialMapping = () => {
                   disabled={removing}
                   className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg shadow-sm transition disabled:opacity-50 cursor-pointer"
                 >
-                  {removing ? "Deleting..." : "Yes, Delete Mapping"}
+                  {removing ? "Deleting..." : "Yes, Delete All Mappings"}
                 </button>
               </div>
             </div>
