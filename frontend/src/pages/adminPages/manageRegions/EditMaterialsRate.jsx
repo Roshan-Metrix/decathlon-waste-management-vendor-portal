@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState, useCallback } from "react";
+import React, { useContext, useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   MdEdit,
@@ -20,22 +20,34 @@ import axios from "axios";
 import NavBar from "../../../components/NavBar";
 import { AppContent } from "../../../context/AppContext";
 
-// Quick material suggestions
-const SUGGESTED_MATERIALS = [
-  "Recycling Paper/cardboard",
-  "Recycling Hard Plastic",
-  "Recycling Soft Plastics",
-  "Recycling Metal",
-  "Recycling Glass",
-  "Recycling Rubber",
-  "Recycling Textile",
-  "Recycling Wood",
-  "Recycling Batteries",
-  "Recycling E Waste",
+// Decathlon standard 26 material suggestions matching mobile screen
+const MATERIAL_SUGGESTIONS = [
   "Defective Products",
   "Hazardous Waste",
-  "Waste landfill",
-  "Waste incineration",
+  "Recycling Cardboard",
+  "Recycling E Waste",
+  "Recycling Glass",
+  "Recycling Hangers",
+  "Return Hangers",
+  "Recycling Metal",
+  "Recycling Mixed Packaging",
+  "Recycling Organic",
+  "Recycling Paper",
+  "Recycling Rubber",
+  "Recycling Soft Plastic",
+  "Recycling Textile",
+  "Recycling Wood",
+  "Unsegregated Waste",
+  "Recycling Hard Plastic",
+  "Food Waste - Expired Products",
+  "Recycling Metal Mixed",
+  "Recycling Wood Pallet Wood",
+  "Nonrecycling Wood(Furniture)",
+  "Recycling Metal Fixtures Truck Load",
+  "Aluminium < 1000 kgs /> 1000 kgs",
+  "LED Strips",
+  "Energy Recovery",
+  "Incineration",
 ];
 
 const EditMaterialsRate = () => {
@@ -47,7 +59,7 @@ const EditMaterialsRate = () => {
   const [regions, setRegions] = useState([]);
   const [regionsLoading, setRegionsLoading] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState(
-    location.state?.regionName || "",
+    location.state?.stateName || location.state?.regionName || "",
   );
 
   const [vendors, setVendors] = useState([]);
@@ -93,7 +105,23 @@ const EditMaterialsRate = () => {
         withCredentials: true,
       });
       if (data?.success && Array.isArray(data.regions)) {
-        setRegions(data.regions);
+        const normalized = data.regions.map((item, index) => {
+          if (typeof item === "string") {
+            return {
+              _id: `reg-${index}`,
+              state: item,
+              vendor: "Unknown Vendor",
+              vendorId: "",
+            };
+          }
+          return {
+            _id: item._id || `${item.state}-${item.vendorId || index}`,
+            state: item.state || "",
+            vendor: item.vendor || "Unknown Vendor",
+            vendorId: item.vendorId || "",
+          };
+        });
+        setRegions(normalized);
       }
     } catch (err) {
       console.error("Fetch Regions Error:", err);
@@ -113,10 +141,6 @@ const EditMaterialsRate = () => {
       );
       if (data?.success && Array.isArray(data.vendors)) {
         setVendors(data.vendors);
-        // Default vendor if not selected and only 1
-        if (!selectedVendorId && data.vendors.length === 1) {
-          setSelectedVendorId(data.vendors[0]._id);
-        }
       }
     } catch (err) {
       console.error("Fetch Vendors Error:", err);
@@ -124,12 +148,42 @@ const EditMaterialsRate = () => {
     } finally {
       setVendorsLoading(false);
     }
-  }, [backendUrl, selectedVendorId]);
+  }, [backendUrl]);
 
   useEffect(() => {
     fetchRegions();
     fetchVendors();
   }, [fetchRegions, fetchVendors]);
+
+  // Unique list of state names
+  const uniqueStates = useMemo(() => {
+    const set = new Set();
+    regions.forEach((r) => {
+      if (r.state) set.add(r.state);
+    });
+    return Array.from(set).sort();
+  }, [regions]);
+
+  // Vendors applicable for currently selected region
+  const availableVendors = useMemo(() => {
+    if (!selectedRegion) return vendors;
+    const matchingVendorIds = new Set(
+      regions
+        .filter((r) => r.state === selectedRegion)
+        .map((r) => r.vendorId)
+        .filter(Boolean)
+    );
+    if (matchingVendorIds.size === 0) return vendors;
+    const filtered = vendors.filter((v) => matchingVendorIds.has(v._id));
+    return filtered.length > 0 ? filtered : vendors;
+  }, [selectedRegion, regions, vendors]);
+
+  // Auto-select vendor if only 1 applicable vendor
+  useEffect(() => {
+    if (selectedRegion && !selectedVendorId && availableVendors.length === 1) {
+      setSelectedVendorId(availableVendors[0]._id);
+    }
+  }, [selectedRegion, selectedVendorId, availableVendors]);
 
   // Fetch existing material rates when region and vendor are both selected
   const fetchExistingRates = useCallback(
@@ -143,7 +197,7 @@ const EditMaterialsRate = () => {
       try {
         setMaterialsLoading(true);
         const { data } = await axios.get(
-          `${backendUrl}/auth/get-regional-materials/${encodeURIComponent(region.trim())}/${vendorId}`,
+          `${backendUrl}/auth/get-regional-materials/${encodeURIComponent(region.trim())}/${encodeURIComponent(vendorId)}`,
           { withCredentials: true },
         );
 
@@ -208,16 +262,15 @@ const EditMaterialsRate = () => {
     });
   };
 
-  const handleApplySuggestion = (suggestion) => {
-    const targetIndex =
-      focusedRowIndex < materials.length
-        ? focusedRowIndex
-        : materials.findIndex((m) => !m.materialType);
+  const handleApplySuggestion = (suggestion, targetIndex = null) => {
+    const idx =
+      targetIndex !== null
+        ? targetIndex
+        : focusedRowIndex < materials.length
+          ? focusedRowIndex
+          : materials.length - 1;
 
-    const indexToUse = targetIndex !== -1 ? targetIndex : materials.length - 1;
-
-    handleUpdateRow(indexToUse, "materialType", suggestion);
-    showAlert(`Applied "${suggestion}" to Row #${indexToUse + 1}`, "info");
+    handleUpdateRow(idx, "materialType", suggestion);
   };
 
   // Submit Changes
@@ -241,7 +294,7 @@ const EditMaterialsRate = () => {
     }
 
     const validMaterials = materials
-      .filter((m) => m.materialType.trim() && m.rate !== "")
+      .filter((m) => m.materialType.trim() && String(m.rate).trim() !== "")
       .map((m) => ({
         materialType: m.materialType.trim(),
         rate: Number(m.rate),
@@ -253,8 +306,8 @@ const EditMaterialsRate = () => {
     }
 
     for (const mat of validMaterials) {
-      if (isNaN(mat.rate) || mat.rate < 0) {
-        showAlert(`Rate for "${mat.materialType}" must be a valid positive number.`, "error");
+      if (!Number.isFinite(mat.rate) || mat.rate < 0) {
+        showAlert(`Rate for "${mat.materialType}" must be a valid non-negative number.`, "error");
         return;
       }
     }
@@ -395,7 +448,10 @@ const EditMaterialsRate = () => {
                 <select
                   id="regionSelect"
                   value={selectedRegion}
-                  onChange={(e) => setSelectedRegion(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedRegion(e.target.value);
+                    setSelectedVendorId("");
+                  }}
                   disabled={regionsLoading}
                   className="w-full bg-transparent py-3 text-sm text-gray-800 outline-none cursor-pointer"
                 >
@@ -404,9 +460,9 @@ const EditMaterialsRate = () => {
                       ? "Loading regions..."
                       : "-- Choose a Region --"}
                   </option>
-                  {regions.map((region) => (
-                    <option key={region} value={region}>
-                      {region}
+                  {uniqueStates.map((state) => (
+                    <option key={state} value={state}>
+                      {state}
                     </option>
                   ))}
                 </select>
@@ -435,7 +491,7 @@ const EditMaterialsRate = () => {
                       ? "Loading vendors..."
                       : "-- Choose a Vendor --"}
                   </option>
-                  {vendors.map((vendor) => (
+                  {availableVendors.map((vendor) => (
                     <option key={vendor._id} value={vendor._id}>
                       {vendor.name} ({vendor.state || "National"})
                     </option>
@@ -447,50 +503,63 @@ const EditMaterialsRate = () => {
         </div>
 
         {/* MATERIAL RATES CONFIGURATION */}
-        {selectedRegion && selectedVendorId && (
-          <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-gray-100 pb-3">
-              <div>
-                <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider">
-                  2. Material Types & Rates
-                </h2>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Update unit price per kilogram for collected waste materials
-                </p>
-              </div>
-              <span className="inline-flex items-center text-xs font-medium text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
-                {materials.length} {materials.length === 1 ? "Material" : "Materials"}
-              </span>
-            </div>
-
-            {/* Quick Suggestions Chips */}
-            <div className="rounded-xl bg-slate-50 p-3.5 border border-slate-100">
-              <p className="text-xs font-semibold text-gray-600 mb-2">
-                Quick Suggestions (click to populate active row):
+        <div className="mb-6 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-gray-100 pb-3">
+            <div>
+              <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider">
+                2. Configure Materials & Rates (per kg)
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {selectedRegion && selectedVendorId
+                  ? `Configuring rates for ${selectedRegion}`
+                  : "Please choose both a Region and Vendor above to load and edit rates"}
               </p>
-              <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
-                {SUGGESTED_MATERIALS.map((cat, i) => (
-                  <button
-                    key={`${cat}-${i}`}
-                    type="button"
-                    onClick={() => handleApplySuggestion(cat)}
-                    className="rounded-lg bg-white px-2.5 py-1 text-xs font-medium text-slate-700 border border-slate-200 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 transition cursor-pointer"
-                  >
-                    + {cat}
-                  </button>
-                ))}
-              </div>
             </div>
+            <span className="inline-flex items-center text-xs font-medium text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
+              {materials.length} {materials.length === 1 ? "Material" : "Materials"}
+            </span>
+          </div>
 
-            {/* Material Rows */}
-            {materialsLoading ? (
-              <div className="py-12 text-center text-sm text-gray-500">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent mb-2" />
-                <p>Loading configured material rates...</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {materials.map((row, index) => (
+          {/* Quick Suggestion Chips */}
+          <div className="rounded-xl bg-slate-50 p-3.5 border border-slate-100">
+            <p className="text-xs font-semibold text-gray-600 mb-2">
+              Common Decathlon Material Suggestions (click to populate):
+            </p>
+            <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+              {MATERIAL_SUGGESTIONS.map((cat, i) => (
+                <button
+                  key={`${cat}-${i}`}
+                  type="button"
+                  onClick={() => handleApplySuggestion(cat)}
+                  className="rounded-lg bg-white px-2.5 py-1 text-xs font-medium text-slate-700 border border-slate-200 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 transition cursor-pointer"
+                >
+                  + {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {materialsLoading ? (
+            <div className="py-12 text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent mb-3" />
+              <p className="text-sm font-medium text-gray-500">
+                Fetching material rates...
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {materials.map((row, index) => {
+                const rowSuggestions =
+                  row.materialType.trim().length > 0
+                    ? MATERIAL_SUGGESTIONS.filter((s) =>
+                        s
+                          .toLowerCase()
+                          .includes(row.materialType.trim().toLowerCase()) &&
+                        s.toLowerCase() !== row.materialType.trim().toLowerCase()
+                      )
+                    : [];
+
+                return (
                   <div
                     key={index}
                     onClick={() => setFocusedRowIndex(index)}
@@ -502,14 +571,14 @@ const EditMaterialsRate = () => {
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-bold text-blue-800 bg-blue-100/70 px-2 py-0.5 rounded-md">
-                        Row #{index + 1}
+                        Item #{index + 1}
                       </span>
                       {materials.length > 1 && (
                         <button
                           type="button"
                           onClick={() => handleRemoveRow(index)}
                           className="text-gray-400 hover:text-rose-600 p-1 rounded-md transition cursor-pointer"
-                          title="Remove row"
+                          title="Remove material"
                         >
                           <MdDelete size={18} />
                         </button>
@@ -526,7 +595,7 @@ const EditMaterialsRate = () => {
                           <MdCategory size={18} className="text-blue-600 shrink-0" />
                           <input
                             type="text"
-                            placeholder="e.g. Cardboard, Hard Plastic"
+                            placeholder="e.g. Cardboard, Food Waste, Plastic"
                             value={row.materialType}
                             onFocus={() => setFocusedRowIndex(index)}
                             onChange={(e) =>
@@ -535,9 +604,28 @@ const EditMaterialsRate = () => {
                             className="w-full bg-transparent py-2 text-sm text-gray-800 outline-none"
                           />
                         </div>
+
+                        {/* Matching suggestions dropdown/chips */}
+                        {rowSuggestions.length > 0 && (
+                          <div className="mt-2 flex flex-wrap items-center gap-1.5 p-2 bg-white rounded-lg border border-blue-100">
+                            <span className="text-[11px] font-semibold text-slate-400 mr-1">
+                              Matching:
+                            </span>
+                            {rowSuggestions.slice(0, 4).map((sug) => (
+                              <button
+                                key={sug}
+                                type="button"
+                                onClick={() => handleApplySuggestion(sug, index)}
+                                className="text-[11px] px-2 py-0.5 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 font-medium transition cursor-pointer"
+                              >
+                                {sug}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
-                      {/* Rate per kg Input */}
+                      {/* Rate Input */}
                       <div>
                         <label className="block text-xs font-semibold text-gray-600 mb-1">
                           Rate (per kg) *
@@ -563,43 +651,34 @@ const EditMaterialsRate = () => {
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+                );
+              })}
+            </div>
+          )}
 
-            {/* Add Row Button */}
-            <button
-              type="button"
-              onClick={handleAddRow}
-              className="w-full border-2 border-dashed border-blue-200 bg-blue-50/50 hover:bg-blue-50 text-blue-700 font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition cursor-pointer"
-            >
-              <MdAdd size={20} />
-              <span>Add More Material</span>
-            </button>
-          </div>
-        )}
+          {/* Add Material Button */}
+          <button
+            type="button"
+            onClick={handleAddRow}
+            className="w-full border-2 border-dashed border-blue-200 bg-blue-50/50 hover:bg-blue-50 text-blue-700 font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition cursor-pointer"
+          >
+            <MdAdd size={20} />
+            <span>Add Another Material</span>
+          </button>
+        </div>
 
-        {/* SUBMIT ACTIONS */}
-        {selectedRegion && selectedVendorId && (
-          <div className="flex items-center justify-end gap-3 mb-10">
-            <button
-              type="button"
-              onClick={() => fetchExistingRates(selectedRegion, selectedVendorId)}
-              className="px-5 py-3 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-100 font-medium text-sm transition cursor-pointer"
-            >
-              Reset Changes
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={submitting || materialsLoading}
-              className="flex items-center gap-2 px-7 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-md transition disabled:opacity-50 cursor-pointer"
-            >
-              <MdSave size={18} />
-              <span>{submitting ? "Saving Rates..." : "Save Rate Changes"}</span>
-            </button>
-          </div>
-        )}
+        {/* SAVE BUTTON */}
+        <div className="flex items-center justify-end gap-3 mb-10">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={submitting || materialsLoading}
+            className="flex items-center gap-2 px-7 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-md transition disabled:opacity-50 cursor-pointer"
+          >
+            <MdSave size={18} />
+            <span>{submitting ? "Saving Changes..." : "Save Changes"}</span>
+          </button>
+        </div>
       </main>
     </div>
   );

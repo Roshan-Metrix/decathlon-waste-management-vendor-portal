@@ -20,22 +20,34 @@ import axios from "axios";
 import NavBar from "../../../components/NavBar";
 import { AppContent } from "../../../context/AppContext";
 
-// Decathlon standard material suggestions for quick input
+// Decathlon standard 26 material suggestions matching mobile screen
 const MATERIAL_SUGGESTIONS = [
-  "Recycling Paper/cardboard",
-  "Recycling Hard Plastic",
-  "Recycling Soft Plastics",
-  "Recycling Metal",
-  "Recycling Glass",
-  "Recycling Rubber",
-  "Recycling Textile",
-  "Recycling Wood",
-  "Recycling Batteries",
-  "Recycling E Waste",
   "Defective Products",
   "Hazardous Waste",
-  "Waste landfill",
-  "Waste incineration",
+  "Recycling Cardboard",
+  "Recycling E Waste",
+  "Recycling Glass",
+  "Recycling Hangers",
+  "Return Hangers",
+  "Recycling Metal",
+  "Recycling Mixed Packaging",
+  "Recycling Organic",
+  "Recycling Paper",
+  "Recycling Rubber",
+  "Recycling Soft Plastic",
+  "Recycling Textile",
+  "Recycling Wood",
+  "Unsegregated Waste",
+  "Recycling Hard Plastic",
+  "Food Waste - Expired Products",
+  "Recycling Metal Mixed",
+  "Recycling Wood Pallet Wood",
+  "Nonrecycling Wood(Furniture)",
+  "Recycling Metal Fixtures Truck Load",
+  "Aluminium < 1000 kgs /> 1000 kgs",
+  "LED Strips",
+  "Energy Recovery",
+  "Incineration",
 ];
 
 const AddRegions = () => {
@@ -125,16 +137,15 @@ const AddRegions = () => {
     });
   };
 
-  const handleApplySuggestion = (suggestion) => {
-    const targetIndex =
-      focusedRowIndex < materials.length
-        ? focusedRowIndex
-        : materials.findIndex((m) => !m.materialType);
+  const handleApplySuggestion = (suggestion, targetIndex = null) => {
+    const idx =
+      targetIndex !== null
+        ? targetIndex
+        : focusedRowIndex < materials.length
+          ? focusedRowIndex
+          : materials.length - 1;
 
-    const indexToUse = targetIndex !== -1 ? targetIndex : materials.length - 1;
-
-    handleMaterialChange(indexToUse, "materialType", suggestion);
-    showAlert(`Applied "${suggestion}" to Row #${indexToUse + 1}`, "info");
+    handleMaterialChange(idx, "materialType", suggestion);
   };
 
   // Submit Handler
@@ -151,31 +162,41 @@ const AddRegions = () => {
       return;
     }
 
-    const formattedMaterials = materials
-      .filter((m) => m.materialType.trim() && m.rate !== "")
-      .map((m) => ({
-        materialType: m.materialType.trim(),
-        rate: Number(m.rate),
-      }));
+    // Validate every material row
+    const hasInvalidMaterial = materials.some(
+      (m) =>
+        !m.materialType.trim() ||
+        String(m.rate).trim() === "" ||
+        !Number.isFinite(Number(m.rate)) ||
+        Number(m.rate) < 0
+    );
+
+    if (hasInvalidMaterial) {
+      showAlert(
+        "Please enter a valid Material Type and non-negative Rate for every row.",
+        "error"
+      );
+      return;
+    }
+
+    const formattedMaterials = materials.map((m) => ({
+      materialType: m.materialType.trim(),
+      rate: Number(m.rate),
+    }));
 
     if (formattedMaterials.length === 0) {
       showAlert("Please add at least one valid material with rate.", "error");
       return;
     }
 
-    // Check for negative or non-numeric rates
-    for (const mat of formattedMaterials) {
-      if (isNaN(mat.rate) || mat.rate < 0) {
-        showAlert(`Invalid rate for material "${mat.materialType}". Must be a positive number.`, "error");
-        return;
-      }
-    }
-
     // Check duplicate material types
     const types = formattedMaterials.map((m) => m.materialType.toLowerCase());
     const unique = new Set(types);
     if (unique.size !== types.length) {
-      showAlert("Duplicate material types detected. Please ensure each material name is unique.", "error");
+      showAlert(
+        "Duplicate material types detected. Please ensure each material name is unique.",
+        "error"
+      );
       return;
     }
 
@@ -196,13 +217,15 @@ const AddRegions = () => {
 
       if (res.data?.success) {
         showAlert(
-          res.data.message || `Region "${stateName.trim()}" and materials saved successfully!`,
+          res.data.message ||
+            `Region "${stateName.trim()}" and materials saved successfully!`,
           "success",
         );
         // Reset form
         setStateName("");
         setSelectedVendorName("");
         setMaterials([{ materialType: "", rate: "" }]);
+        setFocusedRowIndex(0);
       } else {
         showAlert(res.data?.message || "Failed to save region materials.", "error");
       }
@@ -225,12 +248,13 @@ const AddRegions = () => {
         {/* ALERT NOTIFICATION */}
         {alert.visible && (
           <div
-            className={`mb-4 flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium transition-all ${alert.type === "success"
+            className={`mb-4 flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium transition-all ${
+              alert.type === "success"
                 ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
                 : alert.type === "error"
                   ? "bg-rose-50 text-rose-800 border border-rose-200"
                   : "bg-blue-50 text-blue-800 border border-blue-200"
-              }`}
+            }`}
           >
             <div className="flex items-center gap-2">
               {alert.type === "success" ? (
@@ -311,7 +335,7 @@ const AddRegions = () => {
                   placeholder="e.g. Karnataka, Maharashtra, Delhi"
                   value={stateName}
                   onChange={(e) => setStateName(e.target.value)}
-                  className="w-full bg-transparent py-3 text-sm text-gray-800 outline-none"
+                  className="w-full bg-transparent py-3 text-sm text-gray-800 outline-none placeholder:text-gray-400"
                 />
               </div>
             </div>
@@ -368,9 +392,9 @@ const AddRegions = () => {
           {/* Quick Suggestion Chips */}
           <div className="rounded-xl bg-slate-50 p-3.5 border border-slate-100">
             <p className="text-xs font-semibold text-gray-600 mb-2">
-              Quick Suggestions (click to populate active row):
+              Common Decathlon Material Suggestions (click to populate):
             </p>
-            <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+            <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
               {MATERIAL_SUGGESTIONS.map((cat, i) => (
                 <button
                   key={`${cat}-${i}`}
@@ -386,79 +410,111 @@ const AddRegions = () => {
 
           {/* Dynamic Rows */}
           <div className="space-y-3">
-            {materials.map((row, index) => (
-              <div
-                key={index}
-                onClick={() => setFocusedRowIndex(index)}
-                className={`relative rounded-xl border p-4 transition ${focusedRowIndex === index
-                    ? "border-blue-300 bg-blue-50/20 shadow-xs"
-                    : "border-gray-100 bg-gray-50/50"
+            {materials.map((row, index) => {
+              const rowSuggestions =
+                row.materialType.trim().length > 0
+                  ? MATERIAL_SUGGESTIONS.filter((s) =>
+                      s
+                        .toLowerCase()
+                        .includes(row.materialType.trim().toLowerCase()) &&
+                      s.toLowerCase() !== row.materialType.trim().toLowerCase()
+                    )
+                  : [];
+
+              return (
+                <div
+                  key={index}
+                  onClick={() => setFocusedRowIndex(index)}
+                  className={`relative rounded-xl border p-4 transition ${
+                    focusedRowIndex === index
+                      ? "border-blue-300 bg-blue-50/20 shadow-xs"
+                      : "border-gray-100 bg-gray-50/50"
                   }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-blue-800 bg-blue-100/70 px-2 py-0.5 rounded-md">
-                    Row #{index + 1}
-                  </span>
-                  {materials.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveMaterialField(index)}
-                      className="text-gray-400 hover:text-rose-600 p-1 rounded-md transition cursor-pointer"
-                      title="Remove row"
-                    >
-                      <MdDelete size={18} />
-                    </button>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {/* Material Type Input */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">
-                      Material Type *
-                    </label>
-                    <div className="flex min-h-11 items-center gap-2 rounded-xl bg-white border border-gray-200 px-3 transition focus-within:ring-2 focus-within:ring-blue-200 focus-within:border-blue-400">
-                      <MdCategory size={18} className="text-blue-600 shrink-0" />
-                      <input
-                        type="text"
-                        placeholder="e.g. Cardboard, Plastic, Metal"
-                        value={row.materialType}
-                        onFocus={() => setFocusedRowIndex(index)}
-                        onChange={(e) =>
-                          handleMaterialChange(index, "materialType", e.target.value)
-                        }
-                        className="w-full bg-transparent py-2 text-sm text-gray-800 outline-none"
-                      />
-                    </div>
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-blue-800 bg-blue-100/70 px-2 py-0.5 rounded-md">
+                      Row #{index + 1}
+                    </span>
+                    {materials.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveMaterialField(index)}
+                        className="text-gray-400 hover:text-rose-600 p-1 rounded-md transition cursor-pointer"
+                        title="Remove row"
+                      >
+                        <MdDelete size={18} />
+                      </button>
+                    )}
                   </div>
 
-                  {/* Rate per kg Input */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">
-                      Rate (per kg) *
-                    </label>
-                    <div className="flex min-h-11 items-center gap-2 rounded-xl bg-white border border-gray-200 px-3 transition focus-within:ring-2 focus-within:ring-blue-200 focus-within:border-blue-400">
-                      <MdCurrencyRupee size={18} className="text-blue-600 shrink-0" />
-                      <input
-                        type="number"
-                        step="any"
-                        min="0"
-                        placeholder="0.00"
-                        value={row.rate}
-                        onFocus={() => setFocusedRowIndex(index)}
-                        onChange={(e) =>
-                          handleMaterialChange(index, "rate", e.target.value)
-                        }
-                        className="w-full bg-transparent py-2 text-sm text-gray-800 outline-none"
-                      />
-                      <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md shrink-0">
-                        / kg
-                      </span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {/* Material Type Input */}
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">
+                        Material Type *
+                      </label>
+                      <div className="flex min-h-11 items-center gap-2 rounded-xl bg-white border border-gray-200 px-3 transition focus-within:ring-2 focus-within:ring-blue-200 focus-within:border-blue-400">
+                        <MdCategory size={18} className="text-blue-600 shrink-0" />
+                        <input
+                          type="text"
+                          placeholder="e.g. Cardboard, Food Waste, Plastic"
+                          value={row.materialType}
+                          onFocus={() => setFocusedRowIndex(index)}
+                          onChange={(e) =>
+                            handleMaterialChange(index, "materialType", e.target.value)
+                          }
+                          className="w-full bg-transparent py-2 text-sm text-gray-800 outline-none"
+                        />
+                      </div>
+
+                      {/* Matching suggestions dropdown/chips for active row */}
+                      {rowSuggestions.length > 0 && (
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5 p-2 bg-white rounded-lg border border-blue-100">
+                          <span className="text-[11px] font-semibold text-slate-400 mr-1">
+                            Matching:
+                          </span>
+                          {rowSuggestions.slice(0, 4).map((sug) => (
+                            <button
+                              key={sug}
+                              type="button"
+                              onClick={() => handleApplySuggestion(sug, index)}
+                              className="text-[11px] px-2 py-0.5 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 font-medium transition cursor-pointer"
+                            >
+                              {sug}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Rate per kg Input */}
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">
+                        Rate (per kg) *
+                      </label>
+                      <div className="flex min-h-11 items-center gap-2 rounded-xl bg-white border border-gray-200 px-3 transition focus-within:ring-2 focus-within:ring-blue-200 focus-within:border-blue-400">
+                        <MdCurrencyRupee size={18} className="text-blue-600 shrink-0" />
+                        <input
+                          type="number"
+                          step="any"
+                          min="0"
+                          placeholder="0.00"
+                          value={row.rate}
+                          onFocus={() => setFocusedRowIndex(index)}
+                          onChange={(e) =>
+                            handleMaterialChange(index, "rate", e.target.value)
+                          }
+                          className="w-full bg-transparent py-2 text-sm text-gray-800 outline-none"
+                        />
+                        <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md shrink-0">
+                          / kg
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Add Row Button */}
@@ -480,6 +536,7 @@ const AddRegions = () => {
               setStateName("");
               setSelectedVendorName("");
               setMaterials([{ materialType: "", rate: "" }]);
+              setFocusedRowIndex(0);
             }}
             className="px-5 py-3 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-100 font-medium text-sm transition cursor-pointer"
           >

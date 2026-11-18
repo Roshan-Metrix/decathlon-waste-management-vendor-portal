@@ -16,6 +16,8 @@ import {
   MdVisibilityOff,
   MdMap,
   MdRefresh,
+  MdBusiness,
+  MdSecurity,
 } from "react-icons/md";
 import axios from "axios";
 import NavBar from "../../../components/NavBar";
@@ -39,7 +41,7 @@ const RemoveRegions = () => {
     Boolean(location.state?.targetRegion),
   );
 
-  // Security Verification state (from APK RemoveRegionScreen)
+  // Security Verification state (matching mobile RemoveRegionScreen)
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -81,7 +83,31 @@ const RemoveRegions = () => {
       });
 
       if (data?.success && Array.isArray(data.regions)) {
-        setRegions(data.regions);
+        const normalized = data.regions.map((item, index) => {
+          if (typeof item === "string") {
+            return {
+              _id: `reg-${index}`,
+              state: item,
+              vendor: "Unknown Vendor",
+              vendorId: "",
+            };
+          }
+          return {
+            _id: item._id || `${item.state}-${item.vendorId || index}`,
+            state: item.state || "",
+            vendor: item.vendor || "Unknown Vendor",
+            vendorId: item.vendorId || "",
+          };
+        });
+        setRegions(normalized);
+
+        // If a string target was passed from navigation, normalize it
+        if (location.state?.targetRegion && typeof location.state.targetRegion === "string") {
+          const match = normalized.find(
+            (r) => r.state.toLowerCase() === location.state.targetRegion.toLowerCase()
+          );
+          if (match) setSelectedRegion(match);
+        }
       } else {
         showAlert(data?.message || "Failed to load regions.", "error");
       }
@@ -94,17 +120,21 @@ const RemoveRegions = () => {
     } finally {
       setLoading(false);
     }
-  }, [backendUrl]);
+  }, [backendUrl, location.state]);
 
   useEffect(() => {
     fetchRegions();
   }, [fetchRegions]);
 
-  // Filtered regions
+  // Filtered regions based on search
   const filteredRegions = useMemo(() => {
     if (!search.trim()) return regions;
     const query = search.toLowerCase().trim();
-    return regions.filter((r) => r.toLowerCase().includes(query));
+    return regions.filter(
+      (item) =>
+        item.vendor?.toLowerCase().includes(query) ||
+        item.state?.toLowerCase().includes(query),
+    );
   }, [regions, search]);
 
   // Open delete modal
@@ -139,7 +169,7 @@ const RemoveRegions = () => {
     try {
       setDeleting(true);
 
-      // 1. Verify Admin Credentials (matching APK RemoveRegionScreen)
+      // 1. Verify Admin Credentials (matching mobile RemoveRegionScreen)
       try {
         const verify = await axios.post(
           `${backendUrl}/auth/login`,
@@ -165,16 +195,29 @@ const RemoveRegions = () => {
         return;
       }
 
-      // 2. Delete the Region
-      const res = await axios.delete(
-        `${backendUrl}/auth/admin/delete-region/${encodeURIComponent(selectedRegion)}`,
-        { withCredentials: true },
-      );
+      // 2. Delete Region by State & Vendor ID
+      const deleteUrl = selectedRegion.vendorId
+        ? `${backendUrl}/auth/admin/delete-region/${encodeURIComponent(
+            selectedRegion.state,
+          )}/${encodeURIComponent(selectedRegion.vendorId)}`
+        : `${backendUrl}/auth/admin/delete-region/${encodeURIComponent(
+            selectedRegion.state,
+          )}`;
+
+      const res = await axios.delete(deleteUrl, { withCredentials: true });
 
       if (res.data?.success) {
-        setRegions((prev) => prev.filter((r) => r !== selectedRegion));
+        setRegions((prev) =>
+          prev.filter(
+            (r) =>
+              !(
+                r.state === selectedRegion.state &&
+                r.vendorId === selectedRegion.vendorId
+              ),
+          ),
+        );
         showAlert(
-          res.data.message || `Region "${selectedRegion}" and associated rates deleted successfully!`,
+          `${selectedRegion.vendor} - ${selectedRegion.state} deleted successfully!`,
           "success",
         );
         handleCloseModal();
@@ -278,7 +321,7 @@ const RemoveRegions = () => {
           <div className="text-xs text-amber-800">
             <p className="font-bold mb-0.5">High Impact Action</p>
             <p>
-              Deleting an operational region will permanently remove all material rate configurations and related mapping references tied to that state. This operation requires admin identity verification.
+              Deleting an operational region will permanently remove all material rate configurations and related mapping references tied to that state and vendor. This operation requires admin identity verification.
             </p>
           </div>
         </div>
@@ -291,7 +334,7 @@ const RemoveRegions = () => {
             </div>
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Total Regions
+                Total Active Regions
               </p>
               <p className="text-2xl font-black text-rose-700">
                 {loading ? "..." : regions.length}
@@ -303,7 +346,7 @@ const RemoveRegions = () => {
             <MdSearch size={22} className="text-gray-400 shrink-0" />
             <input
               type="text"
-              placeholder="Filter regions to remove..."
+              placeholder="Filter by vendor or state..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-transparent text-sm text-gray-800 outline-none placeholder-gray-400"
@@ -312,7 +355,7 @@ const RemoveRegions = () => {
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                className="text-gray-400 hover:text-gray-600 p-1"
+                className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
               >
                 <MdClose size={18} />
               </button>
@@ -350,32 +393,35 @@ const RemoveRegions = () => {
               </p>
             </div>
           ) : (
-            filteredRegions.map((regionName, idx) => (
+            filteredRegions.map((region, idx) => (
               <div
-                key={`${regionName}-${idx}`}
+                key={`${region.vendorId}-${region.state}-${idx}`}
                 className="rounded-2xl border border-gray-100 bg-white p-4 sm:p-5 flex items-center justify-between gap-4 transition hover:border-rose-200 shadow-xs"
               >
                 <div className="flex items-center gap-3.5 truncate">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
-                    <MdLocationOn size={22} />
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                    <MdBusiness size={22} />
                   </div>
                   <div className="truncate">
-                    <h3 className="text-base font-bold text-gray-800 truncate">
-                      {regionName}
+                    {/* Vendor Name */}
+                    <h3 className="text-base font-bold text-gray-900 truncate">
+                      {region.vendor || "Unknown Vendor"}
                     </h3>
-                    <p className="text-xs text-gray-400">
-                      State Region Configuration
-                    </p>
+                    {/* State Name */}
+                    <div className="flex items-center gap-1.5 mt-0.5 text-xs text-slate-500">
+                      <MdLocationOn size={14} className="text-slate-400" />
+                      <span className="font-medium text-slate-700">{region.state}</span>
+                    </div>
                   </div>
                 </div>
 
                 <button
                   type="button"
-                  onClick={() => handleOpenDeleteModal(regionName)}
+                  onClick={() => handleOpenDeleteModal(region)}
                   className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition cursor-pointer shadow-xs shrink-0"
                 >
                   <MdDeleteForever size={16} />
-                  <span>Remove Region</span>
+                  <span>Remove</span>
                 </button>
               </div>
             ))
@@ -383,23 +429,23 @@ const RemoveRegions = () => {
         </div>
 
         {/* SECURITY & DELETION CONFIRMATION MODAL */}
-        {modalVisible && (
+        {modalVisible && selectedRegion && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
             <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-gray-100">
               {/* Modal Header */}
               <div className="flex items-center justify-between pb-3 border-b border-gray-100">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-100 text-rose-600">
-                    <MdWarning size={22} />
+                    <MdSecurity size={22} />
                   </div>
                   <h3 className="text-base font-bold text-gray-800">
-                    Confirm Region Deletion
+                    Admin Authorization
                   </h3>
                 </div>
                 <button
                   onClick={handleCloseModal}
                   disabled={deleting}
-                  className="text-gray-400 hover:text-gray-600 cursor-pointer"
+                  className="text-gray-400 hover:text-gray-600 cursor-pointer disabled:opacity-50"
                 >
                   <MdClose size={20} />
                 </button>
@@ -407,13 +453,17 @@ const RemoveRegions = () => {
 
               {/* Modal Content */}
               <div className="my-4 space-y-4">
-                <div className="rounded-xl bg-rose-50 border border-rose-100 p-3.5">
-                  <p className="text-xs font-semibold text-rose-800 uppercase tracking-wider mb-0.5">
-                    Target Region to Remove:
+                <div className="rounded-xl bg-rose-50 border border-rose-100 p-3.5 space-y-1">
+                  <p className="text-xs font-semibold text-rose-800 uppercase tracking-wider">
+                    Target Configuration to Remove:
                   </p>
-                  <p className="text-lg font-black text-rose-700">
-                    {selectedRegion}
+                  <p className="text-base font-bold text-rose-900">
+                    {selectedRegion.vendor}
                   </p>
+                  <div className="flex items-center gap-1 text-xs text-rose-700">
+                    <MdLocationOn size={14} />
+                    <span>State: {selectedRegion.state}</span>
+                  </div>
                 </div>
 
                 <p className="text-xs text-gray-500 leading-relaxed">
@@ -453,7 +503,7 @@ const RemoveRegions = () => {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="text-gray-400 hover:text-gray-600 p-1"
+                      className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
                     >
                       {showPassword ? (
                         <MdVisibilityOff size={16} />
@@ -471,7 +521,7 @@ const RemoveRegions = () => {
                   type="button"
                   onClick={handleCloseModal}
                   disabled={deleting}
-                  className="px-4 py-2.5 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition cursor-pointer"
+                  className="px-4 py-2.5 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-xl transition cursor-pointer disabled:opacity-50"
                 >
                   Cancel
                 </button>

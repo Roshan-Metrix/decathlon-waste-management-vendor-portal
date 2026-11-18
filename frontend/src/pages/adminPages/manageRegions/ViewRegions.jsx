@@ -15,6 +15,7 @@ import {
   MdBusiness,
   MdCategory,
   MdRefresh,
+  MdChevronRight,
 } from "react-icons/md";
 import axios from "axios";
 import NavBar from "../../../components/NavBar";
@@ -30,9 +31,7 @@ const ViewRegions = () => {
   const [search, setSearch] = useState("");
 
   // Inspecting specific region details
-  const [selectedRegion, setSelectedRegion] = useState(null);
-  const [vendors, setVendors] = useState([]);
-  const [selectedVendorId, setSelectedVendorId] = useState("");
+  const [selectedRegionKey, setSelectedRegionKey] = useState(null);
   const [materialsData, setMaterialsData] = useState([]);
   const [materialsLoading, setMaterialsLoading] = useState(false);
 
@@ -56,7 +55,7 @@ const ViewRegions = () => {
     return () => clearTimeout(timer);
   }, [alert]);
 
-  // Fetch all unique regions
+  // Fetch all regions
   const fetchRegions = useCallback(async () => {
     try {
       setLoading(true);
@@ -65,7 +64,23 @@ const ViewRegions = () => {
       });
 
       if (data?.success && Array.isArray(data.regions)) {
-        setRegions(data.regions);
+        const normalized = data.regions.map((item, index) => {
+          if (typeof item === "string") {
+            return {
+              _id: `reg-${index}`,
+              state: item,
+              vendor: "Unknown Vendor",
+              vendorId: "",
+            };
+          }
+          return {
+            _id: item._id || `${item.state}-${item.vendorId || index}`,
+            state: item.state || "",
+            vendor: item.vendor || "Unknown Vendor",
+            vendorId: item.vendorId || "",
+          };
+        });
+        setRegions(normalized);
       } else {
         showAlert(data?.message || "Failed to load regions.", "error");
       }
@@ -80,40 +95,31 @@ const ViewRegions = () => {
     }
   }, [backendUrl]);
 
-  // Fetch vendors list (for previewing rates per vendor)
-  const fetchVendors = useCallback(async () => {
-    try {
-      const { data } = await axios.get(
-        `${backendUrl}/vendor/get-all-vendors?limit=100`,
-        { withCredentials: true },
-      );
-      if (data?.success && Array.isArray(data.vendors)) {
-        setVendors(data.vendors);
-      }
-    } catch (err) {
-      console.error("Fetch Vendors Error:", err);
-    }
-  }, [backendUrl]);
-
   useEffect(() => {
     fetchRegions();
-    fetchVendors();
-  }, [fetchRegions, fetchVendors]);
+  }, [fetchRegions]);
 
   // Filtered regions
   const filteredRegions = useMemo(() => {
     if (!search.trim()) return regions;
     const query = search.toLowerCase().trim();
-    return regions.filter((r) => r.toLowerCase().includes(query));
+    return regions.filter(
+      (r) =>
+        r.state.toLowerCase().includes(query) ||
+        r.vendor.toLowerCase().includes(query),
+    );
   }, [regions, search]);
 
-  // Fetch materials when a region card is inspected and vendor is chosen
-  const fetchRegionalMaterials = async (region, vendorId) => {
-    if (!region || !vendorId) return;
+  // Fetch materials when a region card is inspected
+  const fetchRegionalMaterials = async (stateName, vendorId) => {
+    if (!stateName || !vendorId) {
+      setMaterialsData([]);
+      return;
+    }
     try {
       setMaterialsLoading(true);
       const { data } = await axios.get(
-        `${backendUrl}/auth/get-regional-materials/${encodeURIComponent(region)}/${vendorId}`,
+        `${backendUrl}/auth/get-regional-materials/${encodeURIComponent(stateName)}/${encodeURIComponent(vendorId)}`,
         { withCredentials: true },
       );
 
@@ -123,7 +129,10 @@ const ViewRegions = () => {
             const [name, rate] = item.split(":");
             return { materialType: name.trim(), rate: rate.trim() };
           }
-          return { materialType: item.materialType || item, rate: item.rate || "-" };
+          return {
+            materialType: item.materialType || item,
+            rate: item.rate !== undefined ? String(item.rate) : "-",
+          };
         });
         setMaterialsData(parsed);
       } else {
@@ -138,23 +147,14 @@ const ViewRegions = () => {
   };
 
   const handleSelectRegion = (region) => {
-    if (selectedRegion === region) {
-      setSelectedRegion(null);
+    const cardKey = `${region.state}-${region.vendorId}`;
+    if (selectedRegionKey === cardKey) {
+      setSelectedRegionKey(null);
       setMaterialsData([]);
     } else {
-      setSelectedRegion(region);
+      setSelectedRegionKey(cardKey);
       setMaterialsData([]);
-      if (vendors.length > 0) {
-        setSelectedVendorId(vendors[0]._id);
-        fetchRegionalMaterials(region, vendors[0]._id);
-      }
-    }
-  };
-
-  const handleVendorChangeForInspect = (vendorId) => {
-    setSelectedVendorId(vendorId);
-    if (selectedRegion && vendorId) {
-      fetchRegionalMaterials(selectedRegion, vendorId);
+      fetchRegionalMaterials(region.state, region.vendorId);
     }
   };
 
@@ -260,7 +260,7 @@ const ViewRegions = () => {
             <MdSearch size={22} className="text-blue-600 shrink-0" />
             <input
               type="text"
-              placeholder="Search regions by name (e.g. Karnataka, Delhi)..."
+              placeholder="Search by vendor or state (e.g. Karnataka, GreenWaste)..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-transparent text-sm text-gray-800 outline-none placeholder-gray-400"
@@ -269,7 +269,7 @@ const ViewRegions = () => {
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                className="text-gray-400 hover:text-gray-600 p-1 rounded-md"
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-md cursor-pointer"
               >
                 <MdClose size={18} />
               </button>
@@ -315,31 +315,41 @@ const ViewRegions = () => {
               </button>
             </div>
           ) : (
-            filteredRegions.map((regionName, idx) => {
-              const isSelected = selectedRegion === regionName;
+            filteredRegions.map((region, idx) => {
+              const cardKey = `${region.state}-${region.vendorId}`;
+              const isSelected = selectedRegionKey === cardKey;
 
               return (
                 <div
-                  key={`${regionName}-${idx}`}
+                  key={`${cardKey}-${idx}`}
                   className={`rounded-2xl border bg-white transition shadow-xs ${
-                    isSelected ? "border-blue-400 ring-2 ring-blue-100" : "border-gray-100 hover:border-gray-200"
+                    isSelected
+                      ? "border-blue-400 ring-2 ring-blue-100"
+                      : "border-gray-100 hover:border-gray-200"
                   }`}
                 >
                   <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div
                       className="flex items-center gap-3.5 cursor-pointer flex-1"
-                      onClick={() => handleSelectRegion(regionName)}
+                      onClick={() => handleSelectRegion(region)}
                     >
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                        <MdLocationOn size={22} />
+                        <MdBusiness size={22} />
                       </div>
                       <div>
-                        <h3 className="text-base font-bold text-gray-800">
-                          {regionName}
+                        {/* Vendor Name */}
+                        <h3 className="text-base font-bold text-gray-900">
+                          {region.vendor || "Unknown Vendor"}
                         </h3>
-                        <p className="text-xs text-gray-400">
-                          State Region • Click to preview material rates
-                        </p>
+                        {/* State Name */}
+                        <div className="flex items-center gap-1.5 mt-0.5 text-xs text-slate-500">
+                          <MdLocationOn size={14} className="text-slate-400" />
+                          <span className="font-medium text-slate-700">{region.state}</span>
+                          <span className="text-slate-300">•</span>
+                          <span className="text-blue-600 hover:underline">
+                            {isSelected ? "Hide Rates" : "Preview Rates"}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
@@ -349,7 +359,11 @@ const ViewRegions = () => {
                         type="button"
                         onClick={() =>
                           navigate("/dashboard/regions/edit-rates", {
-                            state: { regionName },
+                            state: {
+                              stateName: region.state,
+                              vendorId: region.vendorId,
+                              vendorName: region.vendor,
+                            },
                           })
                         }
                         className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition cursor-pointer"
@@ -362,7 +376,7 @@ const ViewRegions = () => {
                         type="button"
                         onClick={() =>
                           navigate("/dashboard/mappings/view-mapping", {
-                            state: { region: regionName },
+                            state: { region: region.state },
                           })
                         }
                         className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition cursor-pointer"
@@ -375,7 +389,7 @@ const ViewRegions = () => {
                         type="button"
                         onClick={() =>
                           navigate("/dashboard/regions/remove-region", {
-                            state: { targetRegion: regionName },
+                            state: { targetRegion: region },
                           })
                         }
                         className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition cursor-pointer"
@@ -393,28 +407,26 @@ const ViewRegions = () => {
                         <div className="flex items-center gap-2">
                           <MdCategory size={18} className="text-blue-600" />
                           <h4 className="text-xs font-bold uppercase tracking-wider text-gray-700">
-                            Regional Material Rates for {regionName}
+                            Rates for {region.vendor} in {region.state}
                           </h4>
                         </div>
 
-                        {/* Vendor Dropdown */}
-                        <div className="flex items-center gap-2">
-                          <label className="text-xs font-semibold text-gray-500 whitespace-nowrap">
-                            Vendor:
-                          </label>
-                          <select
-                            value={selectedVendorId}
-                            onChange={(e) => handleVendorChangeForInspect(e.target.value)}
-                            className="bg-white border border-gray-200 rounded-lg px-2.5 py-1 text-xs text-gray-700 outline-none cursor-pointer"
-                          >
-                            <option value="">-- Choose Vendor --</option>
-                            {vendors.map((v) => (
-                              <option key={v._id} value={v._id}>
-                                {v.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigate("/dashboard/regions/edit-rates", {
+                              state: {
+                                stateName: region.state,
+                                vendorId: region.vendorId,
+                                vendorName: region.vendor,
+                              },
+                            })
+                          }
+                          className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                        >
+                          <MdEdit size={13} />
+                          <span>Configure Rates</span>
+                        </button>
                       </div>
 
                       {materialsLoading ? (
@@ -425,15 +437,17 @@ const ViewRegions = () => {
                       ) : materialsData.length === 0 ? (
                         <div className="rounded-xl border border-gray-200 bg-white p-4 text-center">
                           <p className="text-xs text-gray-500">
-                            {selectedVendorId
-                              ? "No configured materials found for this vendor in this region."
-                              : "Please select a vendor above to inspect rates."}
+                            No configured materials found for this vendor in this region.
                           </p>
                           <button
                             type="button"
                             onClick={() =>
                               navigate("/dashboard/regions/edit-rates", {
-                                state: { regionName, vendorId: selectedVendorId },
+                                state: {
+                                  stateName: region.state,
+                                  vendorId: region.vendorId,
+                                  vendorName: region.vendor,
+                                },
                               })
                             }
                             className="mt-2 text-xs font-semibold text-blue-600 hover:text-blue-800 cursor-pointer"
