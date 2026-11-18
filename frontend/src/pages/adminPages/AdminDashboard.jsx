@@ -117,6 +117,12 @@ const AdminDashboard = () => {
   const [exportStatus, setExportStatus] = useState("ready"); // "processing" | "ready" | "completed"
   const [csvExporting, setCsvExporting] = useState(false);
 
+  // Metrio Export modal state
+  const [isMetrioModalOpen, setIsMetrioModalOpen] = useState(false);
+  const [metrioYear, setMetrioYear] = useState(new Date().getFullYear());
+  const [metrioMonth, setMetrioMonth] = useState(new Date().getMonth() + 1);
+  const [metrioExporting, setMetrioExporting] = useState(false);
+
   // Store list and operational stats state
   const [search, setSearch] = useState("");
   const [stores, setStores] = useState([]);
@@ -323,6 +329,7 @@ const AdminDashboard = () => {
 
   const handleCloseExportModal = () => {
     setIsExportModalOpen(false);
+    setIsMetrioModalOpen(false);
     setExportStatus("ready");
   };
 
@@ -510,6 +517,118 @@ const AdminDashboard = () => {
       );
     } finally {
       setCsvExporting(false);
+    }
+  };
+
+  // Available years and months for Metrio CSV export
+  const currentYear = new Date().getFullYear();
+  const availableYears = useMemo(() => {
+    const years = [];
+    const maxYear = Math.max(currentYear + 2, 2030);
+    for (let y = maxYear; y >= 2020; y--) {
+      years.push(y);
+    }
+    return years;
+  }, [currentYear]);
+
+  const availableMonths = [
+    { value: 1, label: "January (01)" },
+    { value: 2, label: "February (02)" },
+    { value: 3, label: "March (03)" },
+    { value: 4, label: "April (04)" },
+    { value: 5, label: "May (05)" },
+    { value: 6, label: "June (06)" },
+    { value: 7, label: "July (07)" },
+    { value: 8, label: "August (08)" },
+    { value: 9, label: "September (09)" },
+    { value: 10, label: "October (10)" },
+    { value: 11, label: "November (11)" },
+    { value: 12, label: "December (12)" },
+  ];
+
+  const handleExportMetrioCSV = async () => {
+    if (!metrioYear || !metrioMonth) {
+      toast.error("Please select both Year and Month.");
+      return;
+    }
+
+    try {
+      setMetrioExporting(true);
+
+      const url = `${backendUrl}/transaction/metrio-format-data/${metrioYear}/${metrioMonth}`;
+      const { data } = await axios.get(url, { withCredentials: true });
+
+      if (!data?.success) {
+        toast.error(data?.message || "Failed to fetch Metrio format data.");
+        return;
+      }
+
+      const rowsData = Array.isArray(data.data) ? data.data : [];
+
+      if (rowsData.length === 0) {
+        toast.info("No Metrio records found for the selected period.");
+      }
+
+      // Safe CSV cell escaper
+      const escapeCsv = (val) => {
+        if (val === null || val === undefined) return '""';
+        const str = String(val);
+        return `"${str.replace(/"/g, '""')}"`;
+      };
+
+      // Standard Metrio CSV columns with fallback to data keys
+      const METRIO_CSV_COLUMNS = [
+        "Year",
+        "Month",
+        "Site",
+        "Waste Activity Data",
+        "Data Type",
+        "Unit",
+        "Value",
+        "Notes",
+      ];
+
+      const columns =
+        rowsData.length > 0 && Object.keys(rowsData[0]).length > 0
+          ? Object.keys(rowsData[0])
+          : METRIO_CSV_COLUMNS;
+
+      // Header row
+      const csvHeader = columns.map((col) => `"${col}"`).join(",");
+
+      // Data rows mapped to columns
+      const csvLines = rowsData.map((row) =>
+        columns.map((col) => escapeCsv(row[col])).join(",")
+      );
+
+      // Prepend UTF-8 BOM (\uFEFF) for Excel compatibility
+      const csvContent = "\uFEFF" + [csvHeader, ...csvLines].join("\r\n");
+
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+
+      // year-month-metrio.csv
+      link.setAttribute("download", `${metrioYear}-${metrioMonth}-metrio.csv`);
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+
+      setExportStatus("completed");
+      toast.success(
+        `Metrio CSV downloaded successfully (${rowsData.length} records)!`
+      );
+      setIsMetrioModalOpen(false);
+    } catch (err) {
+      console.error("Metrio CSV export error:", err);
+      toast.error(
+        err.response?.data?.message || "Failed to export Metrio CSV."
+      );
+    } finally {
+      setMetrioExporting(false);
     }
   };
 
@@ -1103,10 +1222,10 @@ const AdminDashboard = () => {
                   </div>
 
                   {/* Export Options */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
                     <button
                       onClick={handleExportPDF}
-                      className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs font-semibold shadow-xs hover:shadow transition cursor-pointer"
+                      className="flex items-center justify-center gap-2 px-3 py-2.5 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs font-semibold shadow-xs hover:shadow transition cursor-pointer"
                     >
                       <FileText size={16} />
                       <span>Summary PDF</span>
@@ -1115,12 +1234,12 @@ const AdminDashboard = () => {
                     <button
                       onClick={handleExportCSV}
                       disabled={csvExporting}
-                      className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold shadow-xs hover:shadow transition cursor-pointer disabled:opacity-50"
+                      className="flex items-center justify-center gap-2 px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold shadow-xs hover:shadow transition cursor-pointer disabled:opacity-50"
                     >
                       {csvExporting ? (
                         <>
                           <Loader2 size={16} className="animate-spin" />
-                          <span>Exporting CSV...</span>
+                          <span>Exporting...</span>
                         </>
                       ) : (
                         <>
@@ -1128,6 +1247,14 @@ const AdminDashboard = () => {
                           <span>Invoice CSV</span>
                         </>
                       )}
+                    </button>
+
+                    <button
+                      onClick={() => setIsMetrioModalOpen(true)}
+                      className="flex items-center justify-center gap-2 px-3 py-2.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs font-semibold shadow-xs hover:shadow transition cursor-pointer"
+                    >
+                      <FileSpreadsheet size={16} />
+                      <span>Metrio CSV</span>
                     </button>
                   </div>
                 </>
@@ -1141,6 +1268,136 @@ const AdminDashboard = () => {
                 className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition cursor-pointer"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 
+          METRIO EXPORT POPUP MODAL
+           */}
+      {isMetrioModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+        >
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full overflow-hidden transition-all scale-100">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-emerald-800 to-teal-800 px-6 py-4 flex items-center justify-between text-white">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white">
+                  <FileSpreadsheet size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold">Export Metrio CSV</h3>
+                  <p className="text-xs text-emerald-100">
+                    Select Year and Month
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsMetrioModalOpen(false)}
+                disabled={metrioExporting}
+                className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-white/80 hover:text-white transition cursor-pointer disabled:opacity-50"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              <p className="text-xs text-slate-600">
+                Select the Year and Month to download the Metrio format waste activity report.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Year Select */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                    <Calendar size={14} className="text-slate-400" />
+                    <span>Year</span>
+                  </label>
+                  <select
+                    value={metrioYear}
+                    onChange={(e) => setMetrioYear(Number(e.target.value))}
+                    disabled={metrioExporting}
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 transition disabled:bg-slate-100 cursor-pointer"
+                  >
+                    {availableYears.map((yr) => (
+                      <option key={yr} value={yr}>
+                        {yr}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Month Select */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                    <Calendar size={14} className="text-slate-400" />
+                    <span>Month</span>
+                  </label>
+                  <select
+                    value={metrioMonth}
+                    onChange={(e) => setMetrioMonth(Number(e.target.value))}
+                    disabled={metrioExporting}
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 transition disabled:bg-slate-100 cursor-pointer"
+                  >
+                    {availableMonths.map((m) => (
+                      <option key={m.value} value={m.value}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Target info preview */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs space-y-1.5 text-slate-600">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">Selected Period:</span>
+                  <span className="font-semibold text-slate-900">
+                    {availableMonths.find((m) => m.value === Number(metrioMonth))?.label.split(" ")[0]} {metrioYear}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">File Name:</span>
+                  <span className="font-mono text-emerald-800 font-semibold text-[11px]">
+                    {metrioYear}-{metrioMonth}-metrio.csv
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setIsMetrioModalOpen(false)}
+                disabled={metrioExporting}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-xl transition cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleExportMetrioCSV}
+                disabled={metrioExporting}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs font-semibold shadow-xs hover:shadow transition cursor-pointer disabled:opacity-50"
+              >
+                {metrioExporting ? (
+                  <>
+                    <Loader2 size={15} className="animate-spin" />
+                    <span>Exporting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download size={15} />
+                    <span>Download CSV</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
